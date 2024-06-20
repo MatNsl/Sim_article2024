@@ -65,9 +65,46 @@ trees$cell <- 1*as.numeric((200 <= trees$x) & (trees$x < 300) & (200 <= trees$y)
 ```
 
 ```{r}
-for(l in vec){
+trees$cell3 <- rep(0, 30942)
+for (ligne in 1:60){
   
+  for(l in 1:60){
+    trees$cell3 <- ifelse(
+    (vec[l] <= trees$x) & (trees$x < vec[l]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
+    list[1], trees$cell3)
+  }
+
 }
+
+```
+
+```{r}
+trees$cell3 <- rep(0, 30942)
+trees$cell3 <- ifelse(
+  (vec[1] <= trees$x) & (trees$x < vec[1]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
+  1, trees$cell3)
+```
+
+```{r}
+trees$cell3 <- ifelse(
+  (200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300), 
+  1, trees$cell3)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
 ```{r}
