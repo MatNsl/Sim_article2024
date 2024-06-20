@@ -1,0 +1,90 @@
+---
+title: "Simulation"
+output: pdf_document
+date: "2024-06-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+```
+
+
+```{r}
+trees <- read_excel("~/work/Sim_article2024/artificial_forest_round.xls")
+```
+
+
+```{r}
+# First visualisation
+plot(x = trees$x, y = trees$y, main = "Forest")
+```
+
+
+```{r}
+# True values
+cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(trees$v), "\n", "Soit un volume moyen de", mean(trees$v), "\n", "Le diamètre moyen à hauteur de poitrine est de", mean(trees$d130))
+```
+
+```{r}
+plot(x = trees$x, y = trees$y, main = "Forest", panel.first=grid())
+
+```
+
+```{r}
+# Create another variable to indicate in which cell is each tree
+for (i in vec){
+  
+}
+```
+
+```{r}
+list <- sample(1:10)
+```
+
+```{r}
+n <- 600 # dimension of a cell = 1 unit x 1 unit
+vec <- c() # vector containing coordinates of cells
+for (j in 0:9){ # for each number (1 to 10)
+  for (i in 0:((n/10)-1)){ # translation
+    vec <- append(vec, 200+j+10*i)
+  }
+}
+```
+
+```{r}
+trees$cell2 <- 1*as.numeric((trees$x %in% seq(200, 300, by = .01)) & (trees$y %in% seq(200, 300, by = .01))) # Problem with 107th tree e.g.
+trees$cell <- 1*as.numeric((200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300))
+# trees[trees$cell == 1 & trees$cell2 == 0,]
+# Where is the pb?
+# 297.21 %in% seq(233, 300, by = .01) # FALSE, idem for numbers below 233
+# 297.21 %in% seq(234, 300, by = .01) # TRUE, idem for numbers above 234
+```
+
+```{r}
+for(l in vec){
+  
+}
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
