@@ -38,12 +38,7 @@ plot(x = trees$x, y = trees$y, main = "Forest", panel.first=grid())
 
 # Creating cells
 
-```{r}
-# Create another variable to indicate in which cell is each tree
-for (i in vec){
-  
-}
-```
+We need to create another variable to indicate in which cell is each tree
 
 ```{r}
 # Randomizing the positions of the numbers used to identify cells
@@ -68,6 +63,85 @@ for (j in 0:9){ # for each number (1 to 10)
 ```{r}
 rm(i, j) # Useless outside loops
 ```
+
+## 1st step (1 for loop)
+One line, one number, no shift yet
+```{r}
+for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
+    trees$cell <- ifelse(
+    (vec[k] <= trees$x) & (trees$x < vec[k]+1) & (200 <= trees$y) & (trees$y < 200+1), 
+    list[1], trees$cell)
+}
+```
+
+## 2nd step (2 for loops)
+All the lines, still one number
+
+```{r}
+list_stable <- list
+```
+
+```{r}
+for (l in 1:599) {
+  for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
+    trees$cell <- ifelse(
+    (vec[k] <= trees$x) & (trees$x < vec[k]+1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    # list[1 + trend*(l-1)], 
+    list_stable[1],
+    trees$cell)
+  }
+  list <- shift(list, n = trend, type = "cyclic") # shift for each line
+}
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[trees$cell == 4,]$x, y = trees[trees$cell == 4,]$y, main = "Echantillonnage", panel.first=grid())
+```
+
+## 3rd step (3 for loops)
+The same thing as before but with all possible identifiers (from 1 to 10).
+```{r}
+for (nb in 1:10) {
+  list <- list_stable
+  for (l in 1:599) {
+  for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
+    trees$cell <- ifelse(
+    (vec[k + (nb-1)*60] <= trees$x) & (trees$x < vec[k + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    list_stable[nb],
+    trees$cell)
+  }
+  list <- shift(list, n = trend, type = "cyclic") # shift for each line
+}
+}
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[trees$cell == 4,]$x, y = trees[trees$cell == 4,]$y, main = "Echantillonnage", panel.first=grid())
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Echantillonnage", panel.first=grid())
+```
+
+```{r}
+# When only focusing on the null values
+plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Echantillonnage", panel.first=grid())
+```
+
+```{r}
+trees[trees$cell == 0,] # 4 trees that do not fill in any cell
+# Common characteristic: y is very high
+```
+
+```{r}
+trees[(trees$cell != 0) & (trees$y >= 799),] # vide
+# Problème d'arrondi pour les y
+```
+
+## Draft
 
 ```{r}
 # Tests (preliminaries)
@@ -100,10 +174,11 @@ for (ligne in 0:599){ # All the lines (en parcourant par rapport aux ordonnées)
 
 }
 }
+
+# (ligne-1)*trend + 
+# (ligne-1)*trend + 
 ```
 
-(ligne-1)*trend + 
-(ligne-1)*trend + 
 
 ```{r}
 # Un peu long
@@ -162,7 +237,7 @@ for (ligne in 1:60){
 ```{r}
 # When only focusing on 1 10th of the population
 plot(x = trees[trees$cell3 == 9,]$x, y = trees[trees$cell3 == 9,]$y, main = "Forest", panel.first=grid())
-# Pretty nice
+# Pretty nice (at one point)
 ```
 
 ```{r}
@@ -196,10 +271,6 @@ plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Fores
 ```
 
 
-```{r}
-
-```
-
 # Sampling one point and "creating a circle around"
 
 ```{r}
@@ -230,84 +301,64 @@ total_trees <- nrow(trees[trees$Is_in_circle == TRUE,])
 total_d130 <- sum(trees[trees$Is_in_circle == TRUE,]$d130)
 ```
 
-```{r}
+## One point at random in each cell with a given identifier
 
-```
-
-## 1st step
-One line, one number, no shift yet
-```{r}
-for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
-    trees$cell <- ifelse(
-    (vec[k] <= trees$x) & (trees$x < vec[k]+1) & (200 <= trees$y) & (trees$y < 200+1), 
-    list[1], trees$cell)
-}
-```
-
-## 2nd step
-All the lines, still one number
+Second stage of first phase
 
 ```{r}
-list_stable <- list
+random_points <- data.frame(x = numeric(), y = numeric())
 ```
 
 ```{r}
+
+a <- runif(1, vec[1], vec[1] + 1)
+b <- runif(1, vec[1], vec[1] + 1)
+```
+
+```{r}
+nb <- sample(1:10, 1)
+```
+
+```{r}
+list <- list_stable
 for (l in 1:599) {
   for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
-    trees$cell <- ifelse(
-    (vec[k] <= trees$x) & (trees$x < vec[k]+1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
-    # list[1 + trend*(l-1)], 
-    list_stable[1],
-    trees$cell)
+    a <- runif(1, vec[k + (nb-1)*60], vec[k + (nb-1)*60] + 1)
+    b <- runif(1, 200 + (l-1), 200+l)
+    random_points <- rbind(random_points, list(a,b))
+    # trees$cell <- ifelse(
+    # (vec[] <= trees$x) & (trees$x < vec[k + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    # list_stable[nb],
+    # trees$cell)
   }
   list <- shift(list, n = trend, type = "cyclic") # shift for each line
 }
+
+# NB: 35 940 points are randomly selected if nb = 5
+# 71 880 points are randomly selected if nb = 8, idem with 10
+# whereas we should have exactly 36 000 cells of each type
+
+# PROBLEM
+# N'importe quoi, ne prend pas en compte le shift
 ```
 
 ```{r}
-# When only focusing on 1 10th of the population
-plot(x = trees[trees$cell == 4,]$x, y = trees[trees$cell == 4,]$y, main = "Echantillonnage", panel.first=grid())
+colnames(random_points) <- list("x", "y")
 ```
 
-## 3rd step
-The same thing as before but with all possible identifiers (from 1 to 10).
 ```{r}
-for (nb in 1:10) {
-  list <- list_stable
-  for (l in 1:599) {
-  for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
-    trees$cell <- ifelse(
-    (vec[k + (nb-1)*60] <= trees$x) & (trees$x < vec[k + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
-    list_stable[nb],
-    trees$cell)
-  }
-  list <- shift(list, n = trend, type = "cyclic") # shift for each line
+plot(x = random_points$x, y = random_points$y, main = "Random points", panel.first=grid())
+```
+
+```{r}
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 220), ylim = c(200, 300))
+# Pas du tout random quand nb = 10
+```
+
+```{r}
+for (r in row) {
+  
 }
-}
-```
-
-```{r}
-# When only focusing on 1 10th of the population
-plot(x = trees[trees$cell == 4,]$x, y = trees[trees$cell == 4,]$y, main = "Echantillonnage", panel.first=grid())
-```
-
-```{r}
-# When only focusing on 1 10th of the population
-plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Echantillonnage", panel.first=grid())
-```
-
-```{r}
-# When only focusing on the null values
-plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Echantillonnage", panel.first=grid())
-```
-
-```{r}
-trees[trees$cell == 0,]
-```
-
-```{r}
-trees[(trees$cell != 0) & (trees$y >= 799),] # vide
-# Problème d'arrondi pour les y
 ```
 
 ```{r}
@@ -317,6 +368,27 @@ trees[(trees$cell != 0) & (trees$y >= 799),] # vide
 ```{r}
 
 ```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
 
 
 
