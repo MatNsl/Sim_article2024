@@ -1,0 +1,138 @@
+---
+title: "Draft"
+output: html_document
+date: "2024-06-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Draft
+
+```{r}
+# Tests (preliminaries)
+
+# trees$cell2 <- 1*as.numeric((trees$x %in% seq(200, 300, by = .01)) & (trees$y %in% seq(200, 300, by = .01))) # Problem with 107th tree e.g.
+# trees$cell <- 1*as.numeric((200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300))
+
+# trees[trees$cell == 1 & trees$cell2 == 0,]
+# Where is the pb?
+# 297.21 %in% seq(233, 300, by = .01) # FALSE, idem for numbers below 233
+# 297.21 %in% seq(234, 300, by = .01) # TRUE, idem for numbers above 234
+```
+
+```{r}
+# Un peu long
+
+# PROBLEME: ne garde que le 8 (i.e. le dernier nb)
+
+trees$cell <- rep(0, 30942) # Initialisation de la variable
+
+for (nb in 1:10){ # All the categories (to identify the cells)
+for (ligne in 0:599){ # All the lines (en parcourant par rapport aux ordonnées)
+  for(c in 1:60){ # En parcourant sur une même ligne
+    # if (trees$cell == 0)
+    trees$cell <- ifelse(
+    # (trees$cell == 0) & 
+      (vec[(nb-1)*60 + 1] <= trees$x) & (trees$x < vec[(nb-1)*60 + 1]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1), 
+    list[nb], trees$cell)
+  }
+
+}
+}
+
+# (ligne-1)*trend + 
+# (ligne-1)*trend + 
+```
+
+
+```{r}
+# Un peu long
+
+# PROBLEME: ne garde que le 8 (i.e. le dernier nb)
+
+trees$cell <- rep(0, 30942) # Initialisation de la variable
+
+
+for (ligne in 0:599){ # All the lines (en parcourant par rapport aux ordonnées)
+  # for(c in 1:60){ # En parcourant sur une même ligne
+    for (nb in 1:10){ # All the categories (to identify the cells)
+    # if (trees$cell == 0)
+    trees$cell <- ifelse(
+    # (trees$cell == 0) & 
+      (vec[(nb-1)*60 + 1] <= trees$x) & (trees$x < vec[(nb-1)*60 + 1]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1), 
+    list[nb], trees$cell)
+  }
+
+# }
+}
+```
+
+```{r}
+unique(trees$cell)
+```
+
+```{r}
+trees$cell3 <- rep(0, 30942)
+trees$cell3 <- ifelse(
+  (vec[1] <= trees$x) & (trees$x < vec[1]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
+  1, trees$cell3)
+```
+
+```{r}
+# Inaccurate cell
+trees$cell3 <- ifelse(
+  (200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300), 
+  1, trees$cell3)
+```
+
+```{r}
+# Invalid
+trees$cell3 <- rep(0, 30942)
+for (ligne in 1:60){
+  
+  for(l in 1:60){
+    trees$cell3 <- ifelse(
+    (vec[l] <= trees$x) & (trees$x < vec[l]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
+    list[1], trees$cell3)
+  }
+
+}
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[trees$cell3 == 9,]$x, y = trees[trees$cell3 == 9,]$y, main = "Forest", panel.first=grid())
+# Pretty nice (at one point)
+```
+
+```{r}
+# Test
+
+trees$cell3 <- rep(0, 30942)
+nb = 1
+ligne = 0
+
+for(c in 1:60){ # En parcourant sur une même ligne
+    # if (trees$cell == 0)
+    trees$cell <- ifelse(
+    (vec[(c-1)*trend + (nb-1) + 1] <= trees$x) & (trees$x < vec[(c-1)*trend + nb]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1) & trees$cell, 
+    list[nb], trees$cell)
+  }
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[trees$cell == 1,]$x, y = trees[trees$cell == 1,]$y, main = "Forest", panel.first=grid())
+```
+
+```{r}
+# When only focusing on 
+plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Forest", panel.first=grid())
+```
+
+```{r}
+# When only focusing on 
+plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Forest", panel.first=grid())
+```

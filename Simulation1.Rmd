@@ -33,7 +33,6 @@ cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(tree
 
 ```{r}
 plot(x = trees$x, y = trees$y, main = "Forest", panel.first=grid())
-
 ```
 
 # Creating cells
@@ -61,7 +60,11 @@ for (j in 0:9){ # for each number (1 to 10)
 ```
 
 ```{r}
-rm(i, j) # Useless outside loops
+rm(i, j, n) # Useless outside loops
+```
+
+```{r}
+trees$cell <- rep(0, 30942) # Initialisation de la variable
 ```
 
 ## 1st step (1 for loop)
@@ -82,21 +85,34 @@ list_stable <- list
 ```
 
 ```{r}
+vec_test <- c()
+```
+
+```{r}
 for (l in 1:599) {
   for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
+    vec_test <- append(vec_test, (k + (l-1)*60 -1)%%600 + 1)
+    # if ((k + (l-1)*60 -1)%%600 + 1 <= 0){
+    #   cat((k + (l-1)*60 -1)%%600 + 1, "k=", k, "; l=", l)
+    # }
     trees$cell <- ifelse(
-    (vec[k] <= trees$x) & (trees$x < vec[k]+1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    (vec[(k + (l-1)*60 -1)%%600 + 1] <= trees$x) & (trees$x < vec[(k + (l-1)*60 -1)%%600 + 1]+1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
     # list[1 + trend*(l-1)], 
     list_stable[1],
     trees$cell)
   }
-  list <- shift(list, n = trend, type = "cyclic") # shift for each line
+  # list <- shift(list, n = trend, type = "cyclic") # shift for each line
 }
 ```
 
 ```{r}
 # When only focusing on 1 10th of the population
-plot(x = trees[trees$cell == 4,]$x, y = trees[trees$cell == 4,]$y, main = "Echantillonnage", panel.first=grid())
+plot(x = trees[trees$cell == 5,]$x, y = trees[trees$cell == 5,]$y, main = "Echantillonnage", panel.first=grid())
+```
+
+```{r}
+# When only focusing on 1 10th of the population
+plot(x = trees[(trees$cell == 5) & (trees$x >= 300) & (trees$x < 310),]$x, y = trees[(trees$cell == 5) & (trees$x >= 300) & (trees$x < 310),]$y, main = "Echantillonnage", panel.first=grid())
 ```
 
 ## 3rd step (3 for loops)
@@ -107,7 +123,7 @@ for (nb in 1:10) {
   for (l in 1:599) {
   for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
     trees$cell <- ifelse(
-    (vec[k + (nb-1)*60] <= trees$x) & (trees$x < vec[k + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    (vec[(k + (l-1)*60 -1)%%600 + 1 + (nb-1)*60] <= trees$x) & (trees$x < vec[(k + (l-1)*60 -1)%%600 + 1 + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
     list_stable[nb],
     trees$cell)
   }
@@ -127,6 +143,18 @@ plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Echan
 ```
 
 ```{r}
+# When only focusing on a small part of the population
+plot(x = trees[(trees$cell == 2) & (trees$x < 350) & (trees$x >= 340),]$x, y = trees[(trees$cell == 2) & (trees$x < 350) & (trees$x >= 340),]$y, main = "Echantillonnage", panel.first=grid())
+# Les points sont compris entre 341.0 et 342.0
+```
+
+```{r}
+# When only focusing on a small part of the population
+plot(x = trees[(trees$cell == 2) & (trees$x < 350) & (trees$x >= 340) & (trees$y >= 320) & (trees$y < 380),]$x, y = trees[(trees$cell == 2) & (trees$x < 350) & (trees$x >= 340) & (trees$y >= 320) & (trees$y < 380),]$y, main = "Echantillonnage", panel.first=grid())
+# Les points sont compris entre 341.0 et 342.0
+```
+
+```{r}
 # When only focusing on the null values
 plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Echantillonnage", panel.first=grid())
 ```
@@ -141,136 +169,6 @@ trees[(trees$cell != 0) & (trees$y >= 799),] # vide
 # Problème d'arrondi pour les y
 ```
 
-## Draft
-
-```{r}
-# Tests (preliminaries)
-
-# trees$cell2 <- 1*as.numeric((trees$x %in% seq(200, 300, by = .01)) & (trees$y %in% seq(200, 300, by = .01))) # Problem with 107th tree e.g.
-# trees$cell <- 1*as.numeric((200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300))
-
-# trees[trees$cell == 1 & trees$cell2 == 0,]
-# Where is the pb?
-# 297.21 %in% seq(233, 300, by = .01) # FALSE, idem for numbers below 233
-# 297.21 %in% seq(234, 300, by = .01) # TRUE, idem for numbers above 234
-```
-
-```{r}
-# Un peu long
-
-# PROBLEME: ne garde que le 8 (i.e. le dernier nb)
-
-trees$cell <- rep(0, 30942) # Initialisation de la variable
-
-for (nb in 1:10){ # All the categories (to identify the cells)
-for (ligne in 0:599){ # All the lines (en parcourant par rapport aux ordonnées)
-  for(c in 1:60){ # En parcourant sur une même ligne
-    # if (trees$cell == 0)
-    trees$cell <- ifelse(
-    # (trees$cell == 0) & 
-      (vec[(nb-1)*60 + 1] <= trees$x) & (trees$x < vec[(nb-1)*60 + 1]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1), 
-    list[nb], trees$cell)
-  }
-
-}
-}
-
-# (ligne-1)*trend + 
-# (ligne-1)*trend + 
-```
-
-
-```{r}
-# Un peu long
-
-# PROBLEME: ne garde que le 8 (i.e. le dernier nb)
-
-trees$cell <- rep(0, 30942) # Initialisation de la variable
-
-
-for (ligne in 0:599){ # All the lines (en parcourant par rapport aux ordonnées)
-  # for(c in 1:60){ # En parcourant sur une même ligne
-    for (nb in 1:10){ # All the categories (to identify the cells)
-    # if (trees$cell == 0)
-    trees$cell <- ifelse(
-    # (trees$cell == 0) & 
-      (vec[(nb-1)*60 + 1] <= trees$x) & (trees$x < vec[(nb-1)*60 + 1]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1), 
-    list[nb], trees$cell)
-  }
-
-# }
-}
-```
-
-```{r}
-unique(trees$cell)
-```
-
-```{r}
-trees$cell3 <- rep(0, 30942)
-trees$cell3 <- ifelse(
-  (vec[1] <= trees$x) & (trees$x < vec[1]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
-  1, trees$cell3)
-```
-
-```{r}
-# Inaccurate cell
-trees$cell3 <- ifelse(
-  (200 <= trees$x) & (trees$x < 300) & (200 <= trees$y) & (trees$y < 300), 
-  1, trees$cell3)
-```
-
-```{r}
-# Invalid
-trees$cell3 <- rep(0, 30942)
-for (ligne in 1:60){
-  
-  for(l in 1:60){
-    trees$cell3 <- ifelse(
-    (vec[l] <= trees$x) & (trees$x < vec[l]+1) & (vec[1] <= trees$y) & (trees$y < vec[1]+1), 
-    list[1], trees$cell3)
-  }
-
-}
-```
-
-```{r}
-# When only focusing on 1 10th of the population
-plot(x = trees[trees$cell3 == 9,]$x, y = trees[trees$cell3 == 9,]$y, main = "Forest", panel.first=grid())
-# Pretty nice (at one point)
-```
-
-```{r}
-# Test
-
-trees$cell3 <- rep(0, 30942)
-nb = 1
-ligne = 0
-
-for(c in 1:60){ # En parcourant sur une même ligne
-    # if (trees$cell == 0)
-    trees$cell <- ifelse(
-    (vec[(c-1)*trend + (nb-1) + 1] <= trees$x) & (trees$x < vec[(c-1)*trend + nb]+1) & (200+ligne <= trees$y) & (trees$y < 200+ligne+1) & trees$cell, 
-    list[nb], trees$cell)
-  }
-```
-
-```{r}
-# When only focusing on 1 10th of the population
-plot(x = trees[trees$cell == 1,]$x, y = trees[trees$cell == 1,]$y, main = "Forest", panel.first=grid())
-```
-
-```{r}
-# When only focusing on 
-plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Forest", panel.first=grid())
-```
-
-```{r}
-# When only focusing on 
-plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Forest", panel.first=grid())
-```
-
-
 # Sampling one point and "creating a circle around"
 
 ```{r}
@@ -281,7 +179,7 @@ b <- runif(1, 200, 800)
 ```{r}
 # Function to check if a point is inside the circle
 is_point_in_circle <- function(x, y, h, k, R) {
-  # Calculate the squared distance between the point and the circle's center
+  # Calculate the squared distance between the point and the center of the circle
   squared_distance <- (x - h)^2 + (y - k)^2
   # Check if the squared distance is less than or equal to the squared radius
   return(squared_distance <= R^2)
@@ -343,6 +241,36 @@ for (l in 1:599) {
 ```
 
 ```{r}
+## A modifier 
+# (k + (l-1)*60 -1)%%600 + 1
+
+list <- list_stable
+for (l in 1:600) {
+  for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
+    colnames(random_points) <- list("x", "y")
+    if (length(random_points[(random_points$x > vec[(k + (l-1)*60 -1 + (nb-1)*60)%%600 + 1])
+                             & (random_points$x < vec[(k + (l-1)*60 -1 + (nb-1)*60)%%600 + 1] + 1)
+                             & (random_points$y > 200 + (l-1))
+                             & (random_points$y < 200 + l) ]) == 0){ # Eviter les doublons dans chaque cellule
+    a <- runif(1, vec[(k + (l-1)*60 -1 + (nb-1)*60)%%600 + 1], vec[(k + (l-1)*60 -1 + (nb-1)*60)%%600 + 1] + 1)
+    b <- runif(1, 200 + (l-1), 200+l)
+    random_points <- rbind(random_points, list(a,b))
+    }
+    # trees$cell <- ifelse(
+    # (vec[] <= trees$x) & (trees$x < vec[k + (nb-1)*60] + 1) & (200 + (l-1) <= trees$y) & (trees$y < 200+l), 
+    # list_stable[nb],
+    # trees$cell)
+  }
+  # list <- shift(list, n = trend, type = "cyclic") # shift for each line
+}
+
+# NB: 35 940 points are randomly selected if nb = 5
+# 71 880 points are randomly selected if nb = 8, idem with 10
+# whereas we should have exactly 36 000 cells of each type
+
+```
+
+```{r}
 colnames(random_points) <- list("x", "y")
 ```
 
@@ -351,14 +279,26 @@ plot(x = random_points$x, y = random_points$y, main = "Random points", panel.fir
 ```
 
 ```{r}
-plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 220), ylim = c(200, 300))
-# Pas du tout random quand nb = 10
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
+# Semble régulier si nb = 2
+# Probleme : 2 fois trop de points tirés 
+```
+
+
+```{r}
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(200, 205))
+# Il arrive qu'il y ait 2 points dans la même cellule...
 ```
 
 ```{r}
-for (r in row) {
-  
-}
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
+# Semble régulier si nb = 2
+# Probleme : 10 fois trop de points
+```
+
+```{r}
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(200, 205))
+# Un seul point par cellule
 ```
 
 ```{r}
