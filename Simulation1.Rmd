@@ -15,29 +15,27 @@ library(data.table) # for shift
 
 
 ```{r}
+# Importing the database with the artificial forest
 trees <- read_excel("~/work/Sim_article2024/artificial_forest_round.xls")
 ```
 
 # First approach
 
 ```{r}
-# First visualisation
+# First visualization
 plot(x = trees$x, y = trees$y, main = "Forest")
+# All trees have coordinates (abscissa and ordinate) between 200 and 800
 ```
 
 
 ```{r}
 # True values
-cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(trees$v), "\n", "Soit un volume moyen de", mean(trees$v), "\n", "Le diamètre moyen à hauteur de poitrine est de", mean(trees$d130))
-```
-
-```{r}
-plot(x = trees$x, y = trees$y, main = "Forest", panel.first=grid())
+cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(trees$v), "m^3 \n", "Soit un volume moyen de", mean(trees$v), "m^3 \n", "Le diamètre moyen à hauteur de poitrine est de", mean(trees$d130), "cm")
 ```
 
 # Creating cells
 
-We need to create another variable to indicate in which cell is each tree
+We may create another variable to indicate in which cell is each tree.
 
 ```{r}
 # Randomizing the positions of the numbers used to identify cells
@@ -64,8 +62,10 @@ rm(i, j, n) # Useless outside loops
 ```
 
 ```{r}
-trees$cell <- rep(0, 30942) # Initialisation de la variable
+trees$cell <- rep(0, 30942) # Initialization of the variable
 ```
+
+3 steps to assign a type of cell (i.e. a number between 1 and 10) to every trees
 
 ## 1st step (1 for loop)
 One line, one number, no shift yet
@@ -79,7 +79,6 @@ for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une 
 
 ## 2nd step (2 for loops)
 All the lines, still one number
-
 ```{r}
 list_stable <- list
 ```
@@ -111,7 +110,7 @@ plot(x = trees[trees$cell == 5,]$x, y = trees[trees$cell == 5,]$y, main = "Echan
 ```
 
 ```{r}
-# When only focusing on 1 10th of the population
+# When only focusing on 1 10th of the population but with more precision
 plot(x = trees[(trees$cell == 5) & (trees$x >= 300) & (trees$x < 310),]$x, y = trees[(trees$cell == 5) & (trees$x >= 300) & (trees$x < 310),]$y, main = "Echantillonnage", panel.first=grid())
 ```
 
@@ -184,7 +183,9 @@ is_point_in_circle <- function(x, y, h, k, R) {
   # Check if the squared distance is less than or equal to the squared radius
   return(squared_distance <= R^2)
 }
+```
 
+```{r}
 trees$Is_in_circle <- is_point_in_circle(a, b, trees$x, trees$y, 5)
 ```
 
@@ -241,8 +242,8 @@ for (l in 1:599) {
 ```
 
 ```{r}
-## A modifier 
-# (k + (l-1)*60 -1)%%600 + 1
+# It works a priori
+# l: toutes les lignes ; k: les cellules sur une ligne ; a: abscisse ; b: ordonnée
 
 list <- list_stable
 for (l in 1:600) {
@@ -264,10 +265,13 @@ for (l in 1:600) {
   # list <- shift(list, n = trend, type = "cyclic") # shift for each line
 }
 
-# NB: 35 940 points are randomly selected if nb = 5
-# 71 880 points are randomly selected if nb = 8, idem with 10
-# whereas we should have exactly 36 000 cells of each type
+# 36 000 points are randomly selected if nb = 5
+# Which is what we want!
 
+```
+
+```{r}
+rm(a,b,k,l) # Useless outside loops
 ```
 
 ```{r}
@@ -279,21 +283,20 @@ plot(x = random_points$x, y = random_points$y, main = "Random points", panel.fir
 ```
 
 ```{r}
-plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
+# plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
 # Semble régulier si nb = 2
 # Probleme : 2 fois trop de points tirés 
 ```
 
 
 ```{r}
-plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(200, 205))
+# plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(200, 205))
 # Il arrive qu'il y ait 2 points dans la même cellule...
 ```
 
 ```{r}
 plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
 # Semble régulier si nb = 2
-# Probleme : 10 fois trop de points
 ```
 
 ```{r}
@@ -301,12 +304,30 @@ plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_po
 # Un seul point par cellule
 ```
 
+# Circles around random points
+
 ```{r}
 
 ```
 
 ```{r}
+# Adding columns to the dataframe
+# Number of trees inside each circle around each random point ; Total of diameter ; Total volume
+for (point in 1:36000) {
+  trees$Is_in_circle <- is_point_in_circle(a, b, trees$x, trees$y, 5)
+  # x, y, h, k, R
+  total_trees <- nrow(trees[trees$Is_in_circle == TRUE,])
+  total_d130 <- sum(trees[trees$Is_in_circle == TRUE,]$d130)
+}
+random_points
+```
 
+```{r}
+# Creating the local variable
+# Formule pages 10-11 de Chauvet et alii (2024)
+M_k <- function(x, y, h, k, R) {
+  
+}
 ```
 
 ```{r}
