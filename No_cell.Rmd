@@ -231,8 +231,8 @@ true_vs_MC <- function(n, B, f){
     est_MC <- append(est_MC, est_tot)
   }
   
-  true_value <- integral2(f, 0, 1000, 0, 1000)$Q 
-  est_value <- mean(est_MC)
+  true_value <- integral2(f, 0, 1000, 0, 1000)$Q # Theoretical value
+  est_value <- mean(est_MC) # Estimated value
   return(c(true_value, est_value))
 }
 ```
@@ -259,7 +259,66 @@ true_vs_MC(n = 1000, B = 1000, f = fun_ratio)
 
 ```{r}
 true_vs_MC(n = 10000, B = 10000, f = fun_norm)
-# 1.000000 
+# 1.000000 3.353247
+```
+
+# Variance
+
+Variance formula for the uniform case is based on the formula given by Cordy (1993), theorem 2 page 5 combined with the inclusion density given for example 1 page 4, which can be simplified in this particular case.
+
+## Back to simple cases
+
+### Case of the area
+
+```{r}
+n <- 100 # Sample size
+pi <- sum(rep((1/1000)*(1/1000), n))
+```
+
+```{r}
+# New variable: rho1^2
+random_points$carre <- (random_points$rho1)^2
+est_carre <- sum((random_points$carre)/pi)
+# est_carre = est_area # Logical since rho1 = carre = 1
+```
+
+```{r}
+var_area <- est_carre/pi - (1/n)*(est_area^2)
+# The empirical variance is null as expected
+```
+
+```{r}
+# fun1(x,y)^2 = fun1(x,y)
+varTH_area <- integral2(fun1, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(fun1, 0, 1000, 0, 1000)$Q^2)
+# The theoretical variance is null as expected
+# Since the total is equal to the area
+```
+
+```{r}
+# var_est <- function(f){
+#   random_points$carre <- (random_points$rho1)^2
+#   est_carre <- sum((random_points$carre)/pi)
+# }
+```
+
+### Case of the ratio
+
+```{r}
+# New variable: rho2^2
+random_points$carre2 <- (random_points$rho2)^2
+est_carre2 <- sum((random_points$carre2)/pi)
+# The new total is: 16571726
+
+var_ratio <- est_carre2/pi - (1/n)*(est_ratio^2)
+# Huge empirical variance: 124714284077
+```
+
+```{r}
+fun_ratio2 <- function(x,y){
+  fun_ratio(x,y)^2
+}
+varTH_ratio <- integral2(fun_ratio2, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(fun_ratio, 0, 1000, 0, 1000)$Q^2)
+# Doesn't work, I don't know why
 ```
 
 ```{r}
@@ -274,7 +333,4 @@ true_vs_MC(n = 10000, B = 10000, f = fun_norm)
 
 ```
 
-```{r}
-
-```
 
