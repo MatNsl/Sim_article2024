@@ -1,0 +1,280 @@
+---
+title: "Uniform sampling over the all territory without any cell"
+output: html_document
+date: "2024-06-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("pracma") # double integral
+library(readxl) # to read the initial file
+library(data.table) # for shift
+library(pracma)
+library(magrittr)
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/artificial_forest_round.xls")
+```
+
+```{r}
+# Sample size
+n <- 100
+```
+
+```{r}
+# Dataframe containing all coordinates of n randomly chosen points
+random_points <- data.frame(x = rep(0, n), y = rep(0, n))
+```
+
+```{r}
+# Uniform sampling over the whole territory
+random_points$x <- runif(n, 0, 1000)
+random_points$y <- runif(n, 0, 1000)
+```
+
+```{r}
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+pi <- sum(rep((1/1000)*(1/1000), n))
+```
+
+# With simple functions
+
+## First function: (x,y) -> 1
+
+```{r}
+## First simple function: 1 given to each point
+random_points$rho1 <- rep(1, n)
+# Formula given in Cordy (1993), page 3
+```
+
+```{r}
+## The most simple function
+fun1 <- function(x,y){
+  1
+}
+```
+
+```{r}
+# Value to estimate: the area of the territory
+area <- 1000*1000
+# integral2(fun1, 0, 1000, 0, 1000)$Q # the same
+```
+
+```{r}
+# Estimated value
+est_area <- sum((random_points$rho1)/pi) # Equal to 1 whatever the chosen points
+```
+
+## Second function: (x,y) -> (x/y) normalized
+
+```{r}
+# x/y given to each point
+fun_ratio <- function(x,y){
+  x/y
+}
+```
+
+```{r}
+# Normalization of the ratio
+fun_norm <- function(x,y){
+  (x/y)/(integral2(fun_ratio, 0, 1000, 0, 1000)$Q)
+}
+```
+
+```{r}
+random_points$rho2 <- fun_norm(random_points$x,random_points$y)
+```
+
+```{r}
+# Value to estimate
+ratio_norm <- integral2(fun_norm, 0, 1000, 0, 1000)$Q # = 1
+```
+
+```{r}
+# Estimated value
+est_ratio_norm <- sum((random_points$rho2)/pi)
+# NOT SATISFACTORY: too low (btw 0 and 1)
+```
+
+```{r}
+random_points$rho2 <- fun_ratio(random_points$x,random_points$y)
+```
+
+```{r}
+# Value to estimate
+ratio_norm <- integral2(fun_ratio, 0, 1000, 0, 1000)$Q # = 1
+```
+
+```{r}
+# Estimated value
+est_ratio <- sum((random_points$rho2)/pi)
+# NOT SATISFACTORY
+```
+
+# Monte Carlo
+
+```{r}
+# Number of replications for the Monte-Carlo method
+B <- 1000
+```
+
+```{r}
+# Initialization with a first sample
+series_MC <- data.frame(x.1 = runif(n, 0, 1000), y.1 = runif(n, 0, 1000))
+col_names <- c("x1", "y1")
+```
+
+```{r}
+# Making as many samples as necessary for MC
+for (b in 2:B) {
+  x <- paste("x", b, sep = "")
+  y <- paste("y", b, sep = "")
+  # Uniform sampling over the whole territory
+  a1 <- runif(n, 0, 1000)
+  a2 <- runif(n, 0, 1000)
+  # series_MC$x <- runif(n, 0, 1000)
+  # series_MC$y <- runif(n, 0, 1000)
+  # append()
+  series_MC <- series_MC %>% add_column(x = a1, y = a2)
+  col_names <- append(col_names, c(x, y))
+}
+colnames(series_MC) <- col_names
+```
+
+```{r}
+# Calculation of rho function for each pair (x,y)
+rho_MC <- data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+col_names <- c()
+```
+
+```{r}
+for (c in 1:B) {
+  col_ <- paste("est", c, sep = "")
+  # With normalized ratio
+  a <- fun_norm(series_MC[(2*c)-1],series_MC[2*c])
+  rho_MC <- rho_MC %>% add_column(col_ = a)
+  col_names <- append(col_names, col_)
+}
+rho_MC$x.1 <- NULL
+rho_MC$y.1 <- NULL
+colnames(rho_MC) <- col_names
+```
+
+```{r}
+# List of estimated totals thus obtained from each sample
+est_MC <- c()
+```
+
+```{r}
+for (c in 1:B) {
+  est_tot <- sum((rho_MC[c])/pi)
+  est_MC <- append(est_MC, est_tot)
+}
+```
+
+```{r}
+# Empirical mean based on MC
+mean(est_MC) # should be close to 1
+```
+
+```{r}
+# Empirical standard deviation based on MC
+sd(est_MC)
+```
+
+```{r}
+### Function to automate Monte Carlo method
+
+true_vs_MC <- function(n, B, f){
+  # n: sample size; B: number of iterations for MC; f: function to consider (with 2 variables, x and y)
+  pi <- sum(rep((1/1000)*(1/1000), n))
+  
+  # 1st step: generating n samples
+  series_MC <- data.frame(x.1 = runif(n, 0, 1000), y.1 = runif(n, 0, 1000))
+  col_names <- c("x1", "y1")
+  for (b in 2:B) {
+    x <- paste("x", b, sep = "")
+    y <- paste("y", b, sep = "")
+    # Uniform sampling over the whole territory
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
+    series_MC <- series_MC %>% add_column(x = a1, y = a2)
+    col_names <- append(col_names, c(x, y))
+  }
+  colnames(series_MC) <- col_names
+  
+  # 2nd step: creating the values corresponding to the function
+  rho_MC <- data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+  col_names <- c()
+  for (c in 1:B) {
+    col_ <- paste("est", c, sep = "")
+    a <- f(series_MC[(2*c)-1],series_MC[2*c])
+    rho_MC <- rho_MC %>% add_column(col_ = a)
+    col_names <- append(col_names, col_)
+  }
+  rho_MC$x.1 <- NULL
+  rho_MC$y.1 <- NULL
+  colnames(rho_MC) <- col_names
+  
+  # 3rd step: List of estimated totals thus obtained from each sample
+  est_MC <- c()
+  for (c in 1:B) {
+    est_tot <- sum((rho_MC[c])/pi)
+    est_MC <- append(est_MC, est_tot)
+  }
+  
+  true_value <- integral2(f, 0, 1000, 0, 1000)$Q 
+  est_value <- mean(est_MC)
+  return(c(true_value, est_value))
+}
+```
+
+```{r}
+true_vs_MC(n = 1000, B = 1000, f = fun_norm)
+# 1.000000 2.265018 BOF (?)...
+# 1.000000 2.127999
+# 1.000000 4.984275
+# 1.000000 6.072692
+# 1.000000 1.982327
+```
+
+```{r}
+true_vs_MC(n = 1000, B = 1000, f = fun1)
+# 1e+06 1e+06 (Equality = great)
+```
+
+```{r}
+true_vs_MC(n = 1000, B = 1000, f = fun_ratio)
+# 3715802 6631207 BOF...
+# 3715802 10413305
+```
+
+```{r}
+true_vs_MC(n = 10000, B = 10000, f = fun_norm)
+# 1.000000 
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+

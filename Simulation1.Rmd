@@ -219,6 +219,7 @@ nb <- sample(1:10, 1)
 ```
 
 ```{r}
+# Wrong algorithm
 list <- list_stable
 for (l in 1:599) {
   for (k in 1:60) { # nombre de fois où on obtient un même identifiant pour une ligne donnée
@@ -296,11 +297,11 @@ plot(x = random_points$x, y = random_points$y, main = "Random points", panel.fir
 
 ```{r}
 plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(200, 210), ylim = c(200, 220))
-# Semble régulier si nb = 2
+# Semble régulier si nb = 2, idem si nb = 8
 ```
 
 ```{r}
-plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(200, 205))
+plot(x = random_points[(random_points$x < 210),]$x, y = random_points[(random_points$x < 210),]$y, main = "Random points", panel.first=grid(), xlim = c(202, 205), ylim = c(205, 210))
 # Un seul point par cellule
 ```
 
@@ -319,7 +320,7 @@ for (point in 1:36000) {
   total_trees <- nrow(trees[trees$Is_in_circle == TRUE,])
   total_d130 <- sum(trees[trees$Is_in_circle == TRUE,]$d130)
 }
-random_points
+# random_points
 ```
 
 ```{r}

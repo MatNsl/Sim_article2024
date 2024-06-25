@@ -136,3 +136,37 @@ plot(x = trees[trees$cell == 9,]$x, y = trees[trees$cell == 9,]$y, main = "Fores
 # When only focusing on 
 plot(x = trees[trees$cell == 0,]$x, y = trees[trees$cell == 0,]$y, main = "Forest", panel.first=grid())
 ```
+
+# Draft for part after 25 June
+
+```{r}
+fun_diag <- function(x,y){
+  (x + y) <= 1000
+}
+```
+
+```{r}
+random_points$elt <- random_points$rho2/pi
+```
+
+```{r}
+est_ratio2 <- sum(random_points$elt)
+```
+
+```{r}
+integral2(fun_diag, 0, 1000, 0, 1000)
+```
+
+```{r}
+integrate(function(y) {
+  sapply(y, function(y){
+    integrate(function(x){
+      fun_ratio(x,y)}, 0, 1000)
+    })
+  }, 0, 1000)
+
+```
+
+
+
+
