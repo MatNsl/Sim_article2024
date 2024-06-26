@@ -16,7 +16,7 @@ library(data.table) # for shift
 
 ```{r}
 # Importing the database with the artificial forest
-trees <- read_excel("~/work/Sim_article2024/artificial_forest_round.xls")
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
 ```
 
 # First approach

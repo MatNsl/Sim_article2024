@@ -1,0 +1,81 @@
+---
+title: "Bootstrap"
+output: pdf_document
+date: "2024-06-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("pracma") # double integral
+install.packages("boot") # for bootstrap
+library(readxl) # to read the initial file
+library(data.table) # for shift
+library(pracma)
+library(magrittr) # for pipes
+library(tibble) # for add_column
+library(boot)
+```
+
+# Preliminaries
+
+We do not need the artificial forest for now. We just need a virtual 1000x1000 square.
+
+```{r}
+# Sample size
+n <- 100
+```
+
+```{r}
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+pi <- sum(rep((1/1000)*(1/1000), n))
+pi
+```
+
+# Creating one sample
+
+```{r}
+# Dataframe containing all coordinates of n randomly chosen points
+random_points <- data.frame(x = rep(0, n), y = rep(0, n))
+```
+
+```{r}
+# Uniform sampling over the whole territory
+random_points$x <- runif(n, 0, 1000)
+random_points$y <- runif(n, 0, 1000)
+```
+
+# Creating another sample based on the previous one
+
+```{r}
+for (point in 1:n) {
+  random_points$x
+}
+```
+
+```{r}
+boot()
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

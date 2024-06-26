@@ -1,6 +1,6 @@
 ---
-title: "Uniform sampling over the all territory without any cell"
-output: html_document
+title: "Uniform sampling across the whole territory without any cells"
+output: pdf_document
 date: "2024-06-25"
 ---
 
@@ -13,20 +13,29 @@ install.packages("pracma") # double integral
 library(readxl) # to read the initial file
 library(data.table) # for shift
 library(pracma)
-library(magrittr)
+library(magrittr) # for pipes
+library(tibble) # for add_column
 ```
 
 # Preliminaries
 
-```{r}
-# Importing the database with the artificial forest
-trees <- read_excel("~/work/Sim_article2024/artificial_forest_round.xls")
-```
+We do not need the artificial forest for now. We just need a virtual 1000x1000 square.
 
 ```{r}
 # Sample size
 n <- 100
 ```
+
+```{r}
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+pi <- sum(rep((1/1000)*(1/1000), n))
+pi
+```
+
+# Estimates with simple functions and one sample
+
+## Creating one sample
 
 ```{r}
 # Dataframe containing all coordinates of n randomly chosen points
@@ -39,15 +48,7 @@ random_points$x <- runif(n, 0, 1000)
 random_points$y <- runif(n, 0, 1000)
 ```
 
-```{r}
-# Marginal density: density of the uniform distribution over 1:1000
-# Which leads us to the inclusion density function
-pi <- sum(rep((1/1000)*(1/1000), n))
-```
-
-# With simple functions
-
-## First function: (x,y) -> 1
+## First function: (x,y) $\mapsto$ 1
 
 ```{r}
 ## First simple function: 1 given to each point
@@ -70,56 +71,167 @@ area <- 1000*1000
 
 ```{r}
 # Estimated value
-est_area <- sum((random_points$rho1)/pi) # Equal to 1 whatever the chosen points
+est_area <- sum((random_points$rho1)/pi) # Equal to 1e+06 whatever the chosen points
 ```
 
-## Second function: (x,y) -> (x/y) normalized
+## Second function: (x,y) $\mapsto$ (x/y) with or without normalization
 
 ```{r}
 # x/y given to each point
-fun_ratio <- function(x,y){
+f_ratio <- function(x,y){
   x/y
 }
 ```
 
 ```{r}
 # Normalization of the ratio
-fun_norm <- function(x,y){
-  (x/y)/(integral2(fun_ratio, 0, 1000, 0, 1000)$Q)
+f_norm <- function(x,y){
+  (x/y)/(integral2(f_ratio, 0, 1000, 0, 1000)$Q)
 }
 ```
 
 ```{r}
-random_points$rho2 <- fun_norm(random_points$x,random_points$y)
+# random_points$rho2 <- f_norm(random_points$x,random_points$y)
+```
+
+```{r}
+## Value to estimate
+# ratio_norm <- integral2(f_norm, 0, 1000, 0, 1000)$Q # = 1
+```
+
+```{r}
+## Estimated value
+# est_ratio_norm <- sum((random_points$rho2)/pi)
+## NOT SATISFACTORY: seems too low (between 0 and 1)
+## 0.5449481 e.g.
+```
+
+```{r}
+## Value to estimate
+# ratio_norm <- integral2(f_ratio, 0, 1000, 0, 1000)$Q # = 1
+```
+
+```{r}
+# Calculation of the ratio for each point
+random_points$rho2 <- f_ratio(random_points$x,random_points$y)
 ```
 
 ```{r}
 # Value to estimate
-ratio_norm <- integral2(fun_norm, 0, 1000, 0, 1000)$Q # = 1
+ratio <- integral2(f_ratio, 0, 1000, 0, 1000)$Q # = 3715802
+ratio
 ```
 
 ```{r}
 # Estimated value
-est_ratio_norm <- sum((random_points$rho2)/pi)
-# NOT SATISFACTORY: too low (btw 0 and 1)
+est_ratio <- sum((random_points$rho2)/pi) # = 2024919
+est_ratio
+# Seems not very satisfactory
 ```
 
+## Third function: (x,y) $\mapsto$ as.numeric(x>y)
+
 ```{r}
-random_points$rho2 <- fun_ratio(random_points$x,random_points$y)
+# (x>y) given to each point
+f_ind <- function(x,y){
+  as.numeric(x > y)
+}
 ```
 
 ```{r}
 # Value to estimate
-ratio_norm <- integral2(fun_ratio, 0, 1000, 0, 1000)$Q # = 1
+half_area <- integral2(f_ind, 0, 1000, 0, 1000)$Q
+half_area
+# 509148 if x >= y; 487316.7 if x > y
+```
+
+```{r}
+random_points$rho3 <- f_ind(random_points$x,random_points$y)
 ```
 
 ```{r}
 # Estimated value
-est_ratio <- sum((random_points$rho2)/pi)
-# NOT SATISFACTORY
+est_ind <- sum((random_points$rho3)/pi) # = 470000
+est_ind
+# Seems credible
+```
+
+# Variances with simple functions and one sample
+
+Variance formula for the uniform case is based on the formula given by Cordy (1993), theorem 2 page 5 combined with the inclusion density given for example 1 page 4, which gives a simplified formula for this particular case.
+
+```{r}
+n <- 100 # Sample size
+pi <- sum(rep((1/1000)*(1/1000), n))
+```
+
+## Case of the area
+
+```{r}
+# New variable: rho1^2
+random_points$carre <- (random_points$rho1)^2
+est_carre <- sum((random_points$carre)/pi)
+# est_carre = est_area # Logical since rho1 = carre = 1
+```
+
+```{r}
+var_area <- est_carre/pi - (1/n)*(est_area^2)
+var_area
+# The empirical variance is null as expected
+```
+
+```{r}
+# fun1(x,y)^2 = fun1(x,y)
+varTH_area <- integral2(fun1, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(fun1, 0, 1000, 0, 1000)$Q^2)
+varTH_area
+# The theoretical variance is null as expected
+# Since the total is equal to the area
+```
+
+## Case of the ratio
+
+```{r}
+# New variable: rho2^2
+random_points$carre2 <- (random_points$rho2)^2
+est_carre2 <- sum((random_points$carre2)/pi)
+# The new total is: 16571726
+est_carre2
+
+var_ratio <- est_carre2/pi - (1/n)*(est_ratio^2)
+# Huge empirical variance: 124714284077
+var_ratio
+```
+
+```{r}
+f_ratio2 <- function(x,y){
+  (x/y)^2
+}
+varTH_ratio <- integral2(f_ratio2, 1e-100, 1000, 1e-100, 1000)$Q/pi - (1/n)*(integral2(f_ratio, 1e-100, 1000, 1e-100, 1000)$Q^2)
+varTH_ratio
+# Huge theoretical variance: 3.216476e+97
+# integral2(f_ratio2, 1, 2, 1, 2) # works
+# integral2(f_ratio2, 0, 1000, 0, 1000) # doesn't work
+```
+
+## Case of half of the area
+
+```{r}
+var_ind <- est_ind/pi - (1/n)*(est_ind^2)
+var_ind
+# Empirical variance: 2.491e+09 (huge)
+```
+
+```{r}
+# f_ind(x,y)^2 = f_ind(x,y)
+varTH_ind <- integral2(f_ind, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(f_ind, 0, 1000, 0, 1000)$Q^2)
+varTH_ind
+# Theoretical variance: 2498391345, i.e. around 2.498e+09
+# Close to the empirical one: great
 ```
 
 # Monte Carlo
+
+## First MC application step by step with the normalized ratio
 
 ```{r}
 # Number of replications for the Monte-Carlo method
@@ -133,7 +245,7 @@ col_names <- c("x1", "y1")
 ```
 
 ```{r}
-# Making as many samples as necessary for MC
+# Making as many samples as necessary for MC (i.e. B)
 for (b in 2:B) {
   x <- paste("x", b, sep = "")
   y <- paste("y", b, sep = "")
@@ -159,7 +271,7 @@ col_names <- c()
 for (c in 1:B) {
   col_ <- paste("est", c, sep = "")
   # With normalized ratio
-  a <- fun_norm(series_MC[(2*c)-1],series_MC[2*c])
+  a <- f_norm(series_MC[(2*c)-1],series_MC[2*c])
   rho_MC <- rho_MC %>% add_column(col_ = a)
   col_names <- append(col_names, col_)
 }
@@ -183,12 +295,15 @@ for (c in 1:B) {
 ```{r}
 # Empirical mean based on MC
 mean(est_MC) # should be close to 1
+# 1.740544
 ```
 
 ```{r}
 # Empirical standard deviation based on MC
 sd(est_MC)
 ```
+
+## Automation of the MC method with a function
 
 ```{r}
 ### Function to automate Monte Carlo method
@@ -238,99 +353,37 @@ true_vs_MC <- function(n, B, f){
 ```
 
 ```{r}
-true_vs_MC(n = 1000, B = 1000, f = fun_norm)
-# 1.000000 2.265018 BOF (?)...
-# 1.000000 2.127999
-# 1.000000 4.984275
-# 1.000000 6.072692
-# 1.000000 1.982327
-```
-
-```{r}
-true_vs_MC(n = 1000, B = 1000, f = fun1)
+res <- true_vs_MC(n = 1000, B = 1000, f = fun1)
+cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
 # 1e+06 1e+06 (Equality = great)
 ```
 
 ```{r}
-true_vs_MC(n = 1000, B = 1000, f = fun_ratio)
-# 3715802 6631207 BOF...
+res <- true_vs_MC(n = 1000, B = 1000, f = f_norm)
+cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
+# 1.000000 2.265018
+# 1.000000 2.127999
+# 1.000000 4.984275
+# 1.000000 6.072692
+# 1.000000 1.982327
+# Satisfactory?
+```
+
+```{r}
+res <- true_vs_MC(n = 1000, B = 1000, f = f_ratio)
+cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
+# 3715802 6631207
 # 3715802 10413305
+# 3715802 10325197
+# Satisfactory?
 ```
 
 ```{r}
-true_vs_MC(n = 10000, B = 10000, f = fun_norm)
+res <- true_vs_MC(n = 10000, B = 10000, f = f_norm)
+cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
 # 1.000000 3.353247
+# Not necessarily better with a larger sample and more replications for MC
 ```
 
-# Variance
-
-Variance formula for the uniform case is based on the formula given by Cordy (1993), theorem 2 page 5 combined with the inclusion density given for example 1 page 4, which can be simplified in this particular case.
-
-## Back to simple cases
-
-### Case of the area
-
-```{r}
-n <- 100 # Sample size
-pi <- sum(rep((1/1000)*(1/1000), n))
-```
-
-```{r}
-# New variable: rho1^2
-random_points$carre <- (random_points$rho1)^2
-est_carre <- sum((random_points$carre)/pi)
-# est_carre = est_area # Logical since rho1 = carre = 1
-```
-
-```{r}
-var_area <- est_carre/pi - (1/n)*(est_area^2)
-# The empirical variance is null as expected
-```
-
-```{r}
-# fun1(x,y)^2 = fun1(x,y)
-varTH_area <- integral2(fun1, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(fun1, 0, 1000, 0, 1000)$Q^2)
-# The theoretical variance is null as expected
-# Since the total is equal to the area
-```
-
-```{r}
-# var_est <- function(f){
-#   random_points$carre <- (random_points$rho1)^2
-#   est_carre <- sum((random_points$carre)/pi)
-# }
-```
-
-### Case of the ratio
-
-```{r}
-# New variable: rho2^2
-random_points$carre2 <- (random_points$rho2)^2
-est_carre2 <- sum((random_points$carre2)/pi)
-# The new total is: 16571726
-
-var_ratio <- est_carre2/pi - (1/n)*(est_ratio^2)
-# Huge empirical variance: 124714284077
-```
-
-```{r}
-fun_ratio2 <- function(x,y){
-  fun_ratio(x,y)^2
-}
-varTH_ratio <- integral2(fun_ratio2, 0, 1000, 0, 1000)$Q/pi - (1/n)*(integral2(fun_ratio, 0, 1000, 0, 1000)$Q^2)
-# Doesn't work, I don't know why
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
 
 

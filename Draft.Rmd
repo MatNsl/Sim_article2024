@@ -167,6 +167,14 @@ integrate(function(y) {
 
 ```
 
+# Draft for variance in No_cell.Rmd
+
+```{r}
+# var_est <- function(f){
+#   random_points$carre <- (random_points$rho1)^2
+#   est_carre <- sum((random_points$carre)/pi)
+# }
+```
 
 
 

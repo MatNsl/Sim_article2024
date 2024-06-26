@@ -6,7 +6,7 @@ fun_sous <- function(x,y){
 test <- integral2(fun_sous, 0, 1000, 0, 1000)$Q #
 
 
-# x-y given to each point
+# (x>y) given to each point
 fun_ind <- function(x,y){
   as.numeric(x > y)
 }
