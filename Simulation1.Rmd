@@ -30,7 +30,7 @@ plot(x = trees$x, y = trees$y, main = "Forest")
 
 ```{r}
 # True values
-cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(trees$v), "m^3 \n", "Soit un volume moyen de", mean(trees$v), "m^3 \n", "Le diamètre moyen à hauteur de poitrine est de", mean(trees$d130), "cm")
+cat("Il y a au total", length(trees$x), "arbres et un volume total de", sum(trees$v), "m^3 \nSoit un volume moyen de", mean(trees$v), "m^3 \nLe diamètre moyen à hauteur de poitrine est de", mean(trees$d130), "cm")
 ```
 
 # Creating cells
@@ -186,7 +186,7 @@ is_point_in_circle <- function(x, y, h, k, R) {
 ```
 
 ```{r}
-trees$Is_in_circle <- is_point_in_circle(a, b, trees$x, trees$y, 5)
+trees$Is_in_circle <- is_point_in_circle(a, b, trees$x, trees$y, 2)
 ```
 
 ```{r}

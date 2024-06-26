@@ -176,5 +176,29 @@ integrate(function(y) {
 # }
 ```
 
+# Draft for Trees_circle
+
+```{r}
+trees_in <- data.frame(useless = rep(0,30942))
+col_names <- c()
+for (point in 1:n) {
+  new_col <- paste("point", point, sep = "")
+  a <- random_points[point,]$x
+  b <- random_points[point,]$y
+  val <- is_point_in_circle(a, b, trees$x, trees$y, 100)*point
+  # val <- is_point_in_circle(round(a, digits = 0), round(b, digits = 0), trees$x, trees$y, 100) #*point
+  # if (val != 0){
+  #  trees$Is_in_circle <- append(trees$Is_in_circle, val[val != 0])
+  # }
+  trees_in <- trees_in %>% add_column(new_col = val)
+  col_names <- append(col_names, new_col)
+}
+# unique(trees$Is_in_circle)
+trees_in[1] <- NULL
+colnames(trees_in) <- col_names
+```
+
+
+
 
 

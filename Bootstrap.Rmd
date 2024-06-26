@@ -51,17 +51,52 @@ random_points$y <- runif(n, 0, 1000)
 # Creating another sample based on the previous one
 
 ```{r}
+# Draft
 for (point in 1:n) {
   random_points$x
 }
 ```
 
 ```{r}
-boot()
+sum((random_points$x/random_points$y)/pi)
 ```
 
 ```{r}
+rho <- function(df, indice){
+  d <- df[indice,] # to enable boot
+  return(sum((d$x/d$y)/pi))
+}
+```
 
+```{r}
+res_boot <- boot(data=random_points, statistic=rho, R=10)
+res_boot
+```
+
+```{r}
+boot.ci(res_boot, type = "norm")
+```
+
+```{r}
+boot.ci(res_boot, type = "basic")
+# Warning in norm.inter(t, (1 + c(conf, -conf))/2) :
+#  extreme order statistics used as endpoints
+```
+
+```{r}
+# boot.ci(res_boot, type = "stud") 
+# Error in ci.out[[4L]] : subscript out of bounds
+```
+
+```{r}
+boot.ci(res_boot, type = "perc") 
+# Error in ci.out[[4L]] : subscript out of bounds
+```
+
+```{r}
+boot.ci(res_boot, type = "bca") 
+# Error in bca.ci(boot.out, conf, index[1L], L = L, t = t.o, t0 = t0.o,  : 
+#  estimated adjustment 'a' is NA
 ```
 
 ```{r}
