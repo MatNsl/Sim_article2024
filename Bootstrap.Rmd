@@ -19,6 +19,9 @@ library(tibble) # for add_column
 library(boot)
 ```
 
+Notes from Efron and Tibshirani (1993):
+"It is important to note that B = 100 or 200 is not adequate for confidence interval construction, see Chapter 19." (p161)
+
 # Preliminaries
 
 We do not need the artificial forest for now. We just need a virtual 1000x1000 square.
@@ -31,8 +34,8 @@ n <- 100
 ```{r}
 # Marginal density: density of the uniform distribution over 1:1000
 # Which leads us to the inclusion density function
-pi <- sum(rep((1/1000)*(1/1000), n))
-pi
+p <- sum(rep((1/1000)*(1/1000), n))
+p
 ```
 
 # Creating one sample
@@ -58,13 +61,13 @@ for (point in 1:n) {
 ```
 
 ```{r}
-sum((random_points$x/random_points$y)/pi)
+sum((random_points$x/random_points$y)/p)
 ```
 
 ```{r}
 rho <- function(df, indice){
   d <- df[indice,] # to enable boot
-  return(sum((d$x/d$y)/pi))
+  return(sum((d$x/d$y)/p))
 }
 ```
 
@@ -99,18 +102,77 @@ boot.ci(res_boot, type = "bca")
 #  estimated adjustment 'a' is NA
 ```
 
-```{r}
+# Another package
 
+```{r}
+install.packages("bootstrap")
+library(bootstrap)
+```
+
+```{r}
+## The most simple function
+f_try <- function(x){
+  1
+}
+```
+
+```{r}
+theta <- function(x){mean(x)}
+```
+
+```{r}
+patch.boot <- bootstrap(x = random_points$x,nboot = 1000,theta = theta, func=NULL)
+```
+
+```{r}
+sd(patch.boot$thetastar) # bootstrapped standard error
+```
+
+```{r}
+bcanon(random_points$x, 1000, theta = theta)
+```
+
+```{r}
+circle <- function(x1, x2, R){
+  # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
+  
+  # Intermediary step: which trees are inside the circle?
+  trees_in <- data.frame(useless = rep(0,30942))
+  val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
+  trees_in <- trees_in %>% add_column(new_col = val)
+  trees_in[1] <- NULL
+  
+  # Creation of the local variable
+  local_var <- sum(trees_in[new_col != 0,]/area_circle)
+  return(local_var) # A single number
+}
+```
+
+```{r}
+f_boot <- function(sample){
+  
+}
+```
+
+```{r}
+# xdata <- matrix(rnorm(30),ncol=2)
+n <- 100
+# theta <- function(x,xdata){ cor(xdata[x,1],xdata[x,2]) }
+theta <- function(x,xdata){
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle(xdata[i,1], xdata[i,2], R))
+  }
+  est_nb <- sum((a)/p)
+}
+results <- bcanon(1:n,150,theta,random_points, alpha = 0.95)
+```
+
+```{r}
+results$confpoints # NaN
 ```
 
 ```{r}
 
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```

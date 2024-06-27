@@ -1,0 +1,189 @@
+---
+title: "Uniform sampling without any cells to count trees"
+output: pdf_document
+date: "2024-06-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("pracma") # double integral
+install.packages("boot") # for bootstrap
+library(readxl) # to read the initial file
+library(data.table) # for shift
+library(pracma)
+library(magrittr) # for pipes
+library(tibble) # for add_column
+library(boot)
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+For now, the variable of interest is the number of trees.
+
+```{r}
+# Sample size
+n <- 100
+```
+
+```{r}
+# Radius
+R <- 5
+area_circle <- pi*(R^2)
+```
+
+```{r}
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+p <- sum(rep((1/1000)*(1/1000), n))
+```
+
+# Creating one sample
+
+A sample is created by uniformly sampling the whole territory except the edge, which depends on the radius (to facilitate the calculation of the local variable).
+
+```{r}
+# Dataframe containing all coordinates of n randomly chosen points
+random_points <- data.frame(x = rep(0, n), y = rep(0, n))
+```
+
+```{r}
+# Uniform sampling over the whole territory except the edge
+random_points$x <- runif(n, 0+R, 1000-R)
+random_points$y <- runif(n, 0+R, 1000-R)
+```
+
+# Creating a circle around each point
+
+We want to target trees inside the circles defined by the sample and the radius.
+
+```{r}
+# Function to check if a point is inside a circle (indicator variable)
+is_point_in_circle <- function(x, y, h, k, R) {
+  # Calculate the squared distance between the point and the center of the circle
+  squared_distance <- (x - h)^2 + (y - k)^2
+  # Check if the squared distance is less than or equal to the squared radius
+  return(as.numeric(squared_distance <= R^2))
+}
+```
+
+```{r}
+# New dataframe called trees_in (length = number of trees)
+# Each column targets one point which was previously randomly chosen
+# The value is 1 if the tree corresponding is inside the circle
+trees_in <- data.frame(useless = rep(0,30942))
+col_names <- c()
+for (point in 1:n) {
+  new_col <- paste("point", point, sep = "")
+  a <- random_points[point,]$x
+  b <- random_points[point,]$y
+  val <- is_point_in_circle(a, b, trees$x, trees$y, R) #*point
+  trees_in <- trees_in %>% add_column(new_col = val)
+  col_names <- append(col_names, new_col)
+}
+trees_in[1] <- NULL
+colnames(trees_in) <- col_names
+```
+
+```{r}
+rm(a,b,val,col_names)
+```
+
+```{r}
+# Creating a local variable (pages 10-11 in Trinh et alii (2024))
+local_var <- c()
+for (placette in 1:n) {
+  local_var <- append(local_var, sum(trees_in[trees_in[placette] != 0,]/area_circle))
+}
+
+est_nb <- sum((local_var)/p)
+cat("An estimation of the total number of trees based on the sample:", est_nb)
+# 29921.13 e.g.
+```
+
+## Automation
+
+A local variable is created, based on one pair of points (center of the circle) and the radius.
+
+```{r}
+circle <- function(x1, x2, R){
+  # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
+  
+  # Intermediary step: which trees are inside the circle?
+  trees_in <- data.frame(useless = rep(0,30942))
+  val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
+  trees_in <- trees_in %>% add_column(new_col = val)
+  trees_in[1] <- NULL
+  
+  # Creation of the local variable
+  local_var <- sum(trees_in[new_col != 0,]/area_circle)
+  return(local_var) # A single number
+}
+```
+
+A mean of B estimations (Monte Carlo), each of them based on a sample of size n and using a radius R.
+
+```{r}
+### Function to automate Monte Carlo method
+
+true_vs_MC <- function(n, B, R){
+  # n: sample size; B: number of iterations for MC;
+  # R: radius of the circle, taken into account for the sampling
+  p <- sum(rep((1/1000)*(1/1000), n))
+  
+  # 1st step: generating n samples
+  series_MC <- data.frame(x.1 = runif(n, 0+R, 1000-R), y.1 = runif(n, 0+R, 1000-R))
+  col_names <- c("x1", "y1")
+  for (b in 2:B) {
+    x <- paste("x", b, sep = "")
+    y <- paste("y", b, sep = "")
+    # Uniform sampling over the whole territory except the edge
+    a1 <- runif(n, 0+R, 1000-R)
+    a2 <- runif(n, 0+R, 1000-R)
+    series_MC <- series_MC %>% add_column(x = a1, y = a2)
+    col_names <- append(col_names, c(x, y))
+  }
+  colnames(series_MC) <- col_names
+  
+  # 2nd step: creating the values corresponding to the function
+  # Based on each sampled pair in all samples
+  rho_MC <- data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+  col_names <- c()
+  for (c in 1:B) {
+    col_ <- paste("est", c, sep = "")
+    a <- c()
+    for (i in 1:n) {
+      a <- append(a, circle(series_MC[i, (2*c)-1], series_MC[i, 2*c], R))
+    }
+    rho_MC <- rho_MC %>% add_column(col_ = a)
+    col_names <- append(col_names, col_)
+  }
+  rho_MC$x.1 <- NULL
+  rho_MC$y.1 <- NULL
+  colnames(rho_MC) <- col_names
+  
+  # 3rd step: List of estimated totals thus obtained from each sample
+  est_MC <- c()
+  for (c in 1:B) {
+    est_tot <- sum((rho_MC[c])/p)
+    est_MC <- append(est_MC, est_tot)
+  }
+  
+  true_value <- nrow(trees) # Theoretical value
+  est_value <- mean(est_MC) # Estimated value
+  return(c(true_value, est_value))
+}
+```
+
+```{r}
+res <- true_vs_MC(n = 100, B = 1000, R = 5)
+cat("True number of trees:", res[1], "\nMean of all the estimations (Monte Carlo):", res[2])
+```
+

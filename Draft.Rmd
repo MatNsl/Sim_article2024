@@ -198,6 +198,53 @@ trees_in[1] <- NULL
 colnames(trees_in) <- col_names
 ```
 
+```{r}
+## Draft
+
+nb_trees <- c()
+
+for (placette in 1:n) {
+  nb_trees <- append(nb_trees, sum(trees_in[trees_in$point74 != 0,]))
+}
+
+sum((nb_trees)/p)
+# 28737017 # TOO MUCH, p is (probably) wrong
+# 9.028e+09 # if p unchanged i.e. sum(rep((1/1000)*(1/1000), n))
+# 57474033 # TOO MUCH, p is (probably) wrong if sum(rep((1/1000)*(1/1000)*((R^2)*pi)/2, n))
+```
+
+```{r}
+trees$Is_in_circle <- is_point_in_circle(500, 500, trees$x, trees$y, 100)
+unique(trees$Is_in_circle)
+```
+
+```{r}
+# The sample thus obtained
+trees[trees$Is_in_circle == TRUE,]
+```
+
+```{r}
+total_trees <- nrow(trees[trees$Is_in_circle == TRUE,])
+```
+
+```{r}
+trees$Is_in_circle <- is_point_in_circle(580.869189, 797.312061, trees$x, trees$y, 100)
+unique(trees$Is_in_circle)
+```
+
+
+```{r}
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+p <- sum(rep((1/1000)*(1/1000), n)) # :(
+# p
+
+# I would say that p changes: area of each circle over total area for each marginal
+# p <- sum(rep((1/1000)*(1/1000)*(R^2)*pi, n)) # :(
+
+# p <- sum(rep((1/1000)*(1/1000)*((R^2)*pi)/2, n))
+```
+
 
 
 
