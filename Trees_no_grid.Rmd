@@ -36,7 +36,6 @@ n <- 100
 ```{r}
 # Radius
 R <- 5
-area_circle <- pi*(R^2)
 ```
 
 ```{r}
@@ -56,8 +55,8 @@ random_points <- data.frame(x = rep(0, n), y = rep(0, n))
 
 ```{r}
 # Uniform sampling over the whole territory except the edge
-random_points$x <- runif(n, 0+R, 1000-R)
-random_points$y <- runif(n, 0+R, 1000-R)
+random_points$x <- runif(n, 0, 1000)
+random_points$y <- runif(n, 0, 1000)
 ```
 
 # Creating a circle around each point
@@ -93,19 +92,25 @@ colnames(trees_in) <- col_names
 ```
 
 ```{r}
-rm(a,b,val,col_names)
+rm(a,b,val,col_names, point, new_col)
 ```
 
 ```{r}
 # Creating a local variable (pages 10-11 in Trinh et alii (2024))
 local_var <- c()
+source("~/work/Sim_article2024/Inc_area.R")
 for (placette in 1:n) {
-  local_var <- append(local_var, sum(trees_in[trees_in[placette] != 0,]/area_circle))
+  local_var <- append(local_var, sum(trees_in[trees_in[placette] != 0,]/inc_area(c(random_points[placette,]$x, random_points[placette,]$y),0,0,1000,1000,R)))
 }
 
 est_nb <- sum((local_var)/p)
 cat("An estimation of the total number of trees based on the sample:", est_nb)
-# 29921.13 e.g.
+# 26228.73 e.g.
+# 38197.19 e.g.
+```
+
+```{r}
+rm(placette)
 ```
 
 ## Automation
@@ -118,12 +123,13 @@ circle <- function(x1, x2, R){
   
   # Intermediary step: which trees are inside the circle?
   trees_in <- data.frame(useless = rep(0,30942))
+  new_col <- "in_or_out"
   val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
   trees_in <- trees_in %>% add_column(new_col = val)
   trees_in[1] <- NULL
   
   # Creation of the local variable
-  local_var <- sum(trees_in[new_col != 0,]/area_circle)
+  local_var <- sum(trees_in[new_col != 0,]/inc_area(c(x1, x2),0,0,1000,1000,R))
   return(local_var) # A single number
 }
 ```
@@ -139,14 +145,14 @@ true_vs_MC <- function(n, B, R){
   p <- sum(rep((1/1000)*(1/1000), n))
   
   # 1st step: generating n samples
-  series_MC <- data.frame(x.1 = runif(n, 0+R, 1000-R), y.1 = runif(n, 0+R, 1000-R))
+  series_MC <- data.frame(x.1 = runif(n, 0, 1000), y.1 = runif(n, 0, 1000))
   col_names <- c("x1", "y1")
   for (b in 2:B) {
     x <- paste("x", b, sep = "")
     y <- paste("y", b, sep = "")
     # Uniform sampling over the whole territory except the edge
-    a1 <- runif(n, 0+R, 1000-R)
-    a2 <- runif(n, 0+R, 1000-R)
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
     series_MC <- series_MC %>% add_column(x = a1, y = a2)
     col_names <- append(col_names, c(x, y))
   }
@@ -185,5 +191,7 @@ true_vs_MC <- function(n, B, R){
 ```{r}
 res <- true_vs_MC(n = 100, B = 1000, R = 5)
 cat("True number of trees:", res[1], "\nMean of all the estimations (Monte Carlo):", res[2])
+# True number of trees: 30942 
+# Mean of all the estimations (Monte Carlo): 30954.24
 ```
 
