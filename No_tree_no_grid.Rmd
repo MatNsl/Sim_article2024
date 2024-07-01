@@ -232,7 +232,7 @@ col_names <- c()
 ```{r}
 for (c in 1:B) {
   col_ <- paste("est", c, sep = "")
-  # With normalized ratio
+  # With f_x
   a <- f_x(series_MC[(2*c)-1],series_MC[2*c])
   rho_MC <- rho_MC %>% add_column(col_ = a)
   col_names <- append(col_names, col_)

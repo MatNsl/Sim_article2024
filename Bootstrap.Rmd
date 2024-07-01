@@ -9,11 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("pracma") # double integral
 install.packages("boot") # for bootstrap
 library(readxl) # to read the initial file
 library(data.table) # for shift
-library(pracma)
 library(magrittr) # for pipes
 library(tibble) # for add_column
 library(boot)
@@ -24,41 +22,159 @@ Notes from Efron and Tibshirani (1993):
 
 # Preliminaries
 
-We do not need the artificial forest for now. We just need a virtual 1000x1000 square.
+((We do not need the artificial forest for now. We just need a virtual 1000x1000 square.))
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
 
 ```{r}
 # Sample size
 n <- 100
-```
 
-```{r}
 # Marginal density: density of the uniform distribution over 1:1000
 # Which leads us to the inclusion density function
 p <- sum(rep((1/1000)*(1/1000), n))
-p
+
+# Number of bootstrap samples
+B <- 500
+
+# Radius to consider for the circle around each sampled point
+R <- 5
 ```
 
 # Creating one sample
 
 ```{r}
 # Dataframe containing all coordinates of n randomly chosen points
-random_points <- data.frame(x = rep(0, n), y = rep(0, n))
-```
-
-```{r}
 # Uniform sampling over the whole territory
-random_points$x <- runif(n, 0, 1000)
-random_points$y <- runif(n, 0, 1000)
+random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
 ```
 
-# Creating another sample based on the previous one
+# Creating other samples based on the previous one
 
 ```{r}
-# Draft
-for (point in 1:n) {
-  random_points$x
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
+  df_boot <- tibble(.rows = nrow(df_sample))
+  col_names <- c()
+  for (b in 1:B) {
+    col_ <- paste("ech", b, sep = "")
+    nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE)
+    sample_b <- df_sample[nb,]
+    df_boot <- df_boot %>% add_column(b = sample_b)
+    col_names <- append(col_names, col_)
+    colnames(df_boot) <- col_names
+  }
+  return(do.call(data.frame, df_boot))
+  # as.data.frame(df_boot)
+  # Return a data frame with B samples of 2 variables and of size n
 }
 ```
+do.call(data.frame, df)
+```{r}
+# Making of bootstrap samples
+df_boot <- f_boot(random_points, B)
+
+# res[(res$ech1$x == res$ech1$x[1]),]
+# res[(res$ech2$x == res$ech1$x[1]),]
+# Gives the same pair
+
+# res[(res$ech2$x == res$ech2$x[14]),]
+# Gives 1 repeated pair twice for the same sample b = 2
+```
+
+```{r}
+# Try to do bootstrap, success
+# test <- data.frame(col = c(1:3))
+# res <- f_boot(test, 3)
+```
+
+```{r}
+# Function to check if a point is inside a circle (indicator variable)
+is_point_in_circle <- function(x, y, h, k, R) {
+  # Calculate the squared distance between the point and the center of the circle
+  squared_distance <- (x - h)^2 + (y - k)^2
+  # Check if the squared distance is less than or equal to the squared radius
+  return(as.numeric(squared_distance <= R^2))
+}
+```
+
+```{r}
+circle <- function(x1, x2, R){
+  # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
+  
+  # Preliminary: area of the zone of interest
+  source("~/work/Sim_article2024/Inc_area.R")
+  
+  # Intermediary step: which trees are inside the circle?
+  trees_in <- data.frame(useless = rep(0,30942))
+  val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
+  trees_in <- trees_in %>% add_column("new_col" = val)
+  trees_in[1] <- NULL
+  
+  # Creation of the local variable
+  local_var <- sum(trees_in["new_col" != 0,]/inc_area(c(x1, x2),0,0,1000,1000,R))
+  return(local_var) # A single number
+}
+```
+
+```{r}
+test <- circle(500,500,10)
+```
+
+```{r}
+rho_boot <- tibble(.rows = n)
+#  data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+col_names <- c()
+for (c in 1:B) {
+  col_ <- paste("est", c, sep = "")
+  # ech_ <- paste("ech", c, sep = "")
+  # assign(ech_, df_boot[c])
+  a <- c()
+  for (i in 1:n) {
+      a <- append(a, circle(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
+    }
+  # a <- circle(df_boot[(2*c)-1], df_boot[2*c], R)
+  # print(col_)
+  rho_boot <- rho_boot %>% add_column(col_ = a) # 
+  col_names <- append(col_names, col_)
+  colnames(rho_boot) <- col_names
+}
+# rho_MC$x.1 <- NULL
+# rho_MC$y.1 <- NULL
+colnames(rho_boot) <- col_names
+
+# 3rd step: List of estimated totals thus obtained from each sample
+est_boot <- c()
+for (c in 1:B) {
+  est_tot <- sum((rho_boot[c])/p)
+  est_boot <- append(est_boot, est_tot)
+}
+  
+est_boot <- sort(est_boot)
+```
+
+```{r}
+rm(a, c, i, col_names, col_)
+```
+
+```{r}
+# Confidence Interval based on the percent approach
+lim_inf <- est_boot[floor(B*2.5/100)]
+lim_sup <- est_boot[B - floor(B*2.5/100)]
+cat("Un intervalle de confiance à 95% par la méthode des percentiles est : [", lim_inf, ";", lim_sup, "]" )
+```
+
+```{r}
+# Same result with function?
+boot.ci(rho_boot, type = "perc")
+# Doesn't work (df_boot, est_boot, rho_boot)
+```
+
+
+
 
 ```{r}
 sum((random_points$x/random_points$y)/p)
@@ -130,28 +246,6 @@ sd(patch.boot$thetastar) # bootstrapped standard error
 
 ```{r}
 bcanon(random_points$x, 1000, theta = theta)
-```
-
-```{r}
-circle <- function(x1, x2, R){
-  # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
-  
-  # Intermediary step: which trees are inside the circle?
-  trees_in <- data.frame(useless = rep(0,30942))
-  val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
-  trees_in <- trees_in %>% add_column(new_col = val)
-  trees_in[1] <- NULL
-  
-  # Creation of the local variable
-  local_var <- sum(trees_in[new_col != 0,]/area_circle)
-  return(local_var) # A single number
-}
-```
-
-```{r}
-f_boot <- function(sample){
-  
-}
 ```
 
 ```{r}
