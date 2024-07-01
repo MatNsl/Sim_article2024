@@ -9,11 +9,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("pracma") # double integral
 install.packages("boot") # for bootstrap
+```
+
+```{r}
 library(readxl) # to read the initial file
-library(data.table) # for shift
-library(pracma)
 library(magrittr) # for pipes
 library(tibble) # for add_column
 library(boot)
@@ -31,32 +31,22 @@ For now, the variable of interest is the number of trees.
 ```{r}
 # Sample size
 n <- 100
-```
 
-```{r}
 # Radius
 R <- 5
-```
 
-```{r}
-# Marginal density: density of the uniform distribution over 1:1000
-# Which leads us to the inclusion density function
+# Inclusion density function
 p <- sum(rep((1/1000)*(1/1000), n))
 ```
 
 # Creating one sample
 
-A sample is created by uniformly sampling the whole territory except the edge, which depends on the radius (to facilitate the calculation of the local variable).
+A sample is created by uniformly sampling the whole territory.
 
 ```{r}
 # Dataframe containing all coordinates of n randomly chosen points
-random_points <- data.frame(x = rep(0, n), y = rep(0, n))
-```
-
-```{r}
-# Uniform sampling over the whole territory except the edge
-random_points$x <- runif(n, 0, 1000)
-random_points$y <- runif(n, 0, 1000)
+# Uniform sampling over the whole territory 
+random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
 ```
 
 # Creating a circle around each point
@@ -77,17 +67,17 @@ is_point_in_circle <- function(x, y, h, k, R) {
 # New dataframe called trees_in (length = number of trees)
 # Each column targets one point which was previously randomly chosen
 # The value is 1 if the tree corresponding is inside the circle
-trees_in <- data.frame(useless = rep(0,30942))
+trees_in <- tibble(.rows = nrow(trees))
 col_names <- c()
 for (point in 1:n) {
   new_col <- paste("point", point, sep = "")
   a <- random_points[point,]$x
   b <- random_points[point,]$y
-  val <- is_point_in_circle(a, b, trees$x, trees$y, R) #*point
+  val <- is_point_in_circle(a, b, trees$x, trees$y, R)
   trees_in <- trees_in %>% add_column(new_col = val)
   col_names <- append(col_names, new_col)
+  colnames(trees_in) <- col_names
 }
-trees_in[1] <- NULL
 colnames(trees_in) <- col_names
 ```
 
@@ -96,7 +86,7 @@ rm(a,b,val,col_names, point, new_col)
 ```
 
 ```{r}
-# Creating a local variable (pages 10-11 in Trinh et alii (2024))
+# Creating a local variable (cf pages 10-11 in Trinh et alii (2024))
 local_var <- c()
 source("~/work/Sim_article2024/Inc_area.R")
 for (placette in 1:n) {
@@ -150,7 +140,7 @@ true_vs_MC <- function(n, B, R){
   for (b in 2:B) {
     x <- paste("x", b, sep = "")
     y <- paste("y", b, sep = "")
-    # Uniform sampling over the whole territory except the edge
+    # Uniform sampling over the whole territory
     a1 <- runif(n, 0, 1000)
     a2 <- runif(n, 0, 1000)
     series_MC <- series_MC %>% add_column(x = a1, y = a2)
@@ -160,7 +150,8 @@ true_vs_MC <- function(n, B, R){
   
   # 2nd step: creating the values corresponding to the function
   # Based on each sampled pair in all samples
-  rho_MC <- data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+  rho_MC <- tibble(.rows = n)
+    # data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
   col_names <- c()
   for (c in 1:B) {
     col_ <- paste("est", c, sep = "")
@@ -171,8 +162,8 @@ true_vs_MC <- function(n, B, R){
     rho_MC <- rho_MC %>% add_column(col_ = a)
     col_names <- append(col_names, col_)
   }
-  rho_MC$x.1 <- NULL
-  rho_MC$y.1 <- NULL
+  # rho_MC$x.1 <- NULL
+  # rho_MC$y.1 <- NULL
   colnames(rho_MC) <- col_names
   
   # 3rd step: List of estimated totals thus obtained from each sample

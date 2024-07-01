@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 install.packages("boot") # for bootstrap
 library(readxl) # to read the initial file
-library(data.table) # for shift
 library(magrittr) # for pipes
 library(tibble) # for add_column
 library(boot)
@@ -93,6 +92,9 @@ df_boot <- f_boot(random_points, B)
 
 ```{r}
 # Function to check if a point is inside a circle (indicator variable)
+source("~/work/Sim_article2024/Circle.R")
+
+# Function to check if a point is inside a circle (indicator variable)
 is_point_in_circle <- function(x, y, h, k, R) {
   # Calculate the squared distance between the point and the center of the circle
   squared_distance <- (x - h)^2 + (y - k)^2
@@ -102,7 +104,7 @@ is_point_in_circle <- function(x, y, h, k, R) {
 ```
 
 ```{r}
-circle <- function(x1, x2, R){
+circle <- function(x1, x2, R = 5){
   # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
   
   # Preliminary: area of the zone of interest
@@ -161,10 +163,44 @@ rm(a, c, i, col_names, col_)
 ```
 
 ```{r}
-# Confidence Interval based on the percent approach
+# Confidence Interval based on the percentile approach
 lim_inf <- est_boot[floor(B*2.5/100)]
 lim_sup <- est_boot[B - floor(B*2.5/100)]
 cat("Un intervalle de confiance à 95% par la méthode des percentiles est : [", lim_inf, ";", lim_sup, "]" )
+```
+
+```{r}
+rho_init <- tibble(.rows = n)
+# col_names <- c()
+# for (c in 1:B) {
+#   col_ <- paste("est", c, sep = "")
+  # ech_ <- paste("ech", c, sep = "")
+  # assign(ech_, df_boot[c])
+  a <- c()
+  for (i in 1:n) {
+      a <- append(a, circle(random_points[i, 1], random_points[i, 2], R))
+    }
+  # a <- circle(df_boot[(2*c)-1], df_boot[2*c], R)
+  # print(col_)
+  rho_init <- rho_init %>% add_column("ech_init" = a) # 
+  # col_names <- append(col_names, col_)
+  # colnames(rho_boot) <- col_names
+# }
+
+# colnames(rho_boot) <- "ech_init"
+
+# 3rd step: List of estimated totals thus obtained from each sample
+est_init <- c()
+
+est_tot <- sum((rho_init[1])/p)
+est_init <- append(est_init, est_tot)
+
+est_init <- sort(est_init)
+```
+
+```{r}
+# Confidence Interval based on the reverse percentile approach
+cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]" )
 ```
 
 ```{r}
@@ -188,8 +224,9 @@ rho <- function(df, indice){
 ```
 
 ```{r}
-res_boot <- boot(data=random_points, statistic=rho, R=10)
+res_boot <- boot(data=random_points, statistic=circle)
 res_boot
+# Doesn't work
 ```
 
 ```{r}

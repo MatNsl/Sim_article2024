@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(readxl) # to read the initial file
-library(data.table) # for shift
 library(magrittr) # for pipes
 library(tibble) # for add_column
 ```
@@ -29,14 +28,20 @@ n <- 100
 # Which leads us to the inclusion density function
 p <- sum(rep((1/1000)*(1/1000), n))
 p
+# p may be considered simply as a numeric
+# since the inclusion density function is constant in this case
+# Otherwise, we would need a vector
 ```
 
 # Estimates with simple functions and one sample
 
+We are looking for estimates of totals over the whole territory, i.e. double integrals of some functions.
+To make such estimations, we begin with one single sample (made by uniform sampling).
+
 ## Creating one sample
 
 ```{r}
-# Dataframe containing all coordinates of n randomly chosen points
+# Dataframe to contain all coordinates of n randomly chosen points in a 1000x1000 square
 random_points <- data.frame(x = rep(0, n), y = rep(0, n))
 ```
 
@@ -50,7 +55,7 @@ random_points$y <- runif(n, 0, 1000)
 
 ```{r}
 ## The most simple function
-fun1 <- function(x,y){
+f_1 <- function(x,y){
   1
 }
 ```
@@ -58,7 +63,6 @@ fun1 <- function(x,y){
 ```{r}
 # 1 given to each sampled point
 random_points$rho1 <- rep(1, n)
-# Formula given in Cordy (1993), page 3
 ```
 
 ```{r}
@@ -68,8 +72,14 @@ area <- 1000*1000
 
 ```{r}
 # Estimated value
+# Formula given in Cordy (1993), page 3
 est_area <- sum((random_points$rho1)/p) 
 # Equal to 1e+06 whatever the chosen points
+```
+
+```{r}
+# Conclusion
+cat("Total à estimer :", area, "\nEstimation :", est_area)
 ```
 
 ## Second function: (x,y) $\mapsto$ as.numeric(x>y)
@@ -94,8 +104,12 @@ random_points$rho2 <- f_ind(random_points$x,random_points$y)
 ```{r}
 # Estimated value
 est_ind <- sum((random_points$rho2)/p)
-est_ind
 # 510000 e.g.
+```
+
+```{r}
+# Conclusion
+cat("Total à estimer :", half_area, "\nEstimation :", est_ind)
 ```
 
 ## Third function: (x,y) $\mapsto$ x
@@ -114,14 +128,18 @@ val_x <- 500000000
 
 ```{r}
 # Estimated value
-est_x <- sum((random_points$x)/p) # = 
-est_x
+est_x <- sum((random_points$x)/p)
 # 499690876 e.g.
+```
+
+```{r}
+# Conclusion
+cat("Total à estimer :", val_x, "\nEstimation :", est_x)
 ```
 
 # Variances with simple functions and one sample
 
-Variance formula for the uniform case is based on the formula given by Cordy (1993), theorem 2 page 5 combined with the inclusion density given for example 1 page 4, which gives a simplified formula for this particular case.
+Variance formulas for the uniform case are based on the formulas given by Cordy (1993), theorem 2 page 5 combined with the inclusion density given for example 1 page 4, which gives a simplified formula for this particular case.
 
 ## Case of the area
 
@@ -133,33 +151,39 @@ est_carre <- sum((random_points$carre)/p)
 ```
 
 ```{r}
-var_area <- est_carre/p - (1/n)*(est_area^2)
-var_area
+var_area <- ((1000*1000)/(n-1))*est_carre - (1/(n-1))*(est_area^2)
 # The empirical variance is null as expected
 ```
 
 ```{r}
-# fun1(x,y)^2 = fun1(x,y)
-varTH_area <- area/p - (1/n)*(area^2)
-varTH_area
+# f_1(x,y)^2 = f_1(x,y)
+varTHEO_area <- area/p - (1/n)*(area^2)
 # The theoretical variance is null as expected
 # Since the total is equal to the area
+```
+
+```{r}
+# Conclusion
+cat("Variance théorique :", varTHEO_area, "\nVariance empirique :", var_area)
 ```
 
 ## Case of half of the area
 
 ```{r}
-var_ind <- est_ind/p - (1/n)*(est_ind^2)
-var_ind
-# Empirical variance: 2.491e+09 (huge)
+var_ind <- ((1000*1000)/(n-1))*est_ind - (1/(n-1))*(est_ind^2)
+# Empirical variance: 2.491e+09 e.g.
 ```
 
 ```{r}
 # f_ind(x,y)^2 = f_ind(x,y)
-varTH_ind <- half_area/p - (1/n)*(half_area^2)
-varTH_ind
+varTHEO_ind <- half_area/p - (1/n)*(half_area^2)
 # Theoretical variance: 2.5e+09, i.e. around 2.498e+09
-# Close to the empirical one: great
+# Close to the empirical one
+```
+
+```{r}
+# Conclusion
+cat("Variance théorique :", varTHEO_ind, "\nVariance empirique :", var_ind)
 ```
 
 ## Case of the function that keeps x
@@ -171,24 +195,28 @@ f_x2 <- function(x,y){
 ```
 
 ```{r}
+# Value to estimate for this new function
+val_x2 <- (10^12)/3
 # Estimated value
 est_x2 <- sum(((random_points$x)^2)/p)
-est_x2
 # 499690876 e.g.
 ```
 
 ```{r}
-var_x <- est_x2/p - (1/n)*(est_x^2)
-var_x
+var_x <- ((1000*1000)/(n-1))*est_x2 - (1/(n-1))*(est_x^2)
 # Empirical variance: 8.407871e+14 ?!
 ```
 
 ```{r}
 # f_ind(x,y)^2 = f_ind(x,y)
-# varTH_x <- integral2(f_x, 0, 1000, 0, 1000)$Q/p - (1/n)*(integral2(f_x, 0, 1000, 0, 1000)$Q^2)
-# varTH_x
-# Theoretical variance: 2498391345, i.e. around 2.498e+09
-# Close to the empirical one: great
+varTHEO_x <- val_x2/p - (1/n)*(val_x^2)
+# Theoretical variance: 2.5e+09, i.e. around 2.498e+09
+# Close to the empirical one
+```
+
+```{r}
+# Conclusion
+cat("Variance théorique :", varTHEO_x, "\nVariance empirique :", var_x)
 ```
 
 # Monte Carlo
@@ -214,13 +242,14 @@ for (b in 2:B) {
   # Uniform sampling over the whole territory
   a1 <- runif(n, 0, 1000)
   a2 <- runif(n, 0, 1000)
-  # series_MC$x <- runif(n, 0, 1000)
-  # series_MC$y <- runif(n, 0, 1000)
-  # append()
   series_MC <- series_MC %>% add_column(x = a1, y = a2)
   col_names <- append(col_names, c(x, y))
 }
 colnames(series_MC) <- col_names
+```
+
+```{r}
+rm(a1, a2, x, y, b, col_, col_names) # Useless now
 ```
 
 ```{r}
@@ -243,6 +272,10 @@ colnames(rho_MC) <- col_names
 ```
 
 ```{r}
+rm(a, c, col_, col_names) # Useless now
+```
+
+```{r}
 # List of estimated totals thus obtained from each sample
 est_MC <- c()
 ```
@@ -255,14 +288,20 @@ for (c in 1:B) {
 ```
 
 ```{r}
+rm(c, est_tot) # Useless now
+```
+
+```{r}
 # Empirical mean based on MC
-mean(est_MC) # should be close to 5e+08
+cat("Total à estimer :", val_x, "\nMoyenne des estimations obtenues :", mean(est_MC)) 
+# should be close to 5e+08
 # 499121662 e.g.
 ```
 
 ```{r}
 # Empirical standard deviation based on MC
-sd(est_MC)
+cat("Variance associée aux échantillons de Monte Carlo :", sd(est_MC))
+# 28710306 e.g.
 ```
 
 ## Automation of the MC method with a function
@@ -270,8 +309,9 @@ sd(est_MC)
 ```{r}
 ### Function to automate Monte Carlo method
 
-true_vs_MC <- function(n, B, f, true_value){
-  # n: sample size; B: number of iterations for MC; f: function to consider (with 2 variables, x and y)
+true_vs_MC <- function(n, B, f){
+  # n: sample size; B: number of iterations for MC; 
+  # f: function to consider (with 2 variables, x and y)
   p <- sum(rep((1/1000)*(1/1000), n))
   
   # 1st step: generating n samples
@@ -289,50 +329,52 @@ true_vs_MC <- function(n, B, f, true_value){
   colnames(series_MC) <- col_names
   
   # 2nd step: creating the values corresponding to the function
-  rho_MC <- data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
+  rho_MC <- tibble(.rows = n)
+    # data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
   col_names <- c()
   for (c in 1:B) {
     col_ <- paste("est", c, sep = "")
     a <- f(series_MC[(2*c)-1],series_MC[2*c])
     rho_MC <- rho_MC %>% add_column(col_ = a)
     col_names <- append(col_names, col_)
+    colnames(rho_MC) <- col_names
   }
-  rho_MC$x.1 <- NULL
-  rho_MC$y.1 <- NULL
+  # rho_MC$x.1 <- NULL
+  # rho_MC$y.1 <- NULL
   colnames(rho_MC) <- col_names
   
   # 3rd step: List of estimated totals thus obtained from each sample
   est_MC <- c()
   for (c in 1:B) {
-    est_tot <- sum((rho_MC[c])/p)
-    est_MC <- append(est_MC, est_tot)
+    est_MC <- append(est_MC, sum((rho_MC[c])/p))
   }
   
   est_value <- mean(est_MC) # Estimated value
-  return(c(true_value, est_value))
+  return(est_value)
 }
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = fun1, true_value = 1e+06)
-cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
-# 1e+06 1e+06 (Equality = great)
+res <- true_vs_MC(n = 1000, B = 1000, f = f_1)
+cat("True integral:", 1e+06, "\nMean of all the estimations:", res)
+# 1e+06 1e+06 (Equality as always)
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = f_ind, true_value = 500000)
-cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
+res <- true_vs_MC(n = 1000, B = 1000, f = f_ind)
+cat("True integral:", 500000, "\nMean of all the estimations:", res)
+
+# Ex:
 # True integral: 5e+05
 # Mean of all the estimations: 499600
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = f_x, true_value = 5e+08)
-cat("True integral:", res[1], "\nMean of all the estimations:", res[2])
+res <- true_vs_MC(n = 1000, B = 1000, f = f_x)
+cat("True integral:", 5e+08, "\nMean of all the estimations:", res)
 
-#True integral: 5e+08
+# Ex:
+# True integral: 5e+08
 # Mean of all the estimations: 500189987
 ```
-
-
 
