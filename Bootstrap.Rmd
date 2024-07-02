@@ -10,6 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 install.packages("boot") # for bootstrap
+```
+
+```{r}
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
 library(tibble) # for add_column
@@ -29,6 +32,8 @@ trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
 ```
 
 ```{r}
+### Constant values
+
 # Sample size
 n <- 100
 
@@ -56,105 +61,47 @@ random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
 ```{r}
 f_boot <- function(df_sample, B){
   # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
+  
   df_boot <- tibble(.rows = nrow(df_sample))
-  col_names <- c()
   for (b in 1:B) {
-    col_ <- paste("ech", b, sep = "")
     nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE)
     sample_b <- df_sample[nb,]
-    df_boot <- df_boot %>% add_column(b = sample_b)
-    col_names <- append(col_names, col_)
-    colnames(df_boot) <- col_names
+    df_boot <- df_boot %>% add_column(new_col = sample_b)
+    colnames(df_boot)[b] <- paste("ech", b, sep = "")
   }
   return(do.call(data.frame, df_boot))
-  # as.data.frame(df_boot)
   # Return a data frame with B samples of 2 variables and of size n
 }
 ```
-do.call(data.frame, df)
+
 ```{r}
 # Making of bootstrap samples
 df_boot <- f_boot(random_points, B)
-
-# res[(res$ech1$x == res$ech1$x[1]),]
-# res[(res$ech2$x == res$ech1$x[1]),]
-# Gives the same pair
-
-# res[(res$ech2$x == res$ech2$x[14]),]
-# Gives 1 repeated pair twice for the same sample b = 2
 ```
 
 ```{r}
-# Try to do bootstrap, success
-# test <- data.frame(col = c(1:3))
-# res <- f_boot(test, 3)
-```
-
-```{r}
-# Function to check if a point is inside a circle (indicator variable)
-source("~/work/Sim_article2024/Circle.R")
-
-# Function to check if a point is inside a circle (indicator variable)
-is_point_in_circle <- function(x, y, h, k, R) {
-  # Calculate the squared distance between the point and the center of the circle
-  squared_distance <- (x - h)^2 + (y - k)^2
-  # Check if the squared distance is less than or equal to the squared radius
-  return(as.numeric(squared_distance <= R^2))
-}
-```
-
-```{r}
-circle <- function(x1, x2, R = 5){
-  # Produces a local variable based on 2 coordinates (x1, x2) and a radius (R)
-  
-  # Preliminary: area of the zone of interest
-  source("~/work/Sim_article2024/Inc_area.R")
-  
-  # Intermediary step: which trees are inside the circle?
-  trees_in <- data.frame(useless = rep(0,30942))
-  val <- is_point_in_circle(x1, x2, trees$x, trees$y, R)
-  trees_in <- trees_in %>% add_column("new_col" = val)
-  trees_in[1] <- NULL
-  
-  # Creation of the local variable
-  local_var <- sum(trees_in["new_col" != 0,]/inc_area(c(x1, x2),0,0,1000,1000,R))
-  return(local_var) # A single number
-}
-```
-
-```{r}
-test <- circle(500,500,10)
+# Function to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ```
 
 ```{r}
 rho_boot <- tibble(.rows = n)
-#  data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
-col_names <- c()
 for (c in 1:B) {
-  col_ <- paste("est", c, sep = "")
-  # ech_ <- paste("ech", c, sep = "")
   # assign(ech_, df_boot[c])
   a <- c()
   for (i in 1:n) {
-      a <- append(a, circle(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
-    }
-  # a <- circle(df_boot[(2*c)-1], df_boot[2*c], R)
-  # print(col_)
-  rho_boot <- rho_boot %>% add_column(col_ = a) # 
-  col_names <- append(col_names, col_)
-  colnames(rho_boot) <- col_names
+    a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
+  }
+  rho_boot <- rho_boot %>% add_column(new_col = a)
+  colnames(rho_boot)[c] <- paste("est", c, sep = "")
 }
-# rho_MC$x.1 <- NULL
-# rho_MC$y.1 <- NULL
-colnames(rho_boot) <- col_names
 
-# 3rd step: List of estimated totals thus obtained from each sample
+# List of estimated totals thus obtained from each sample
 est_boot <- c()
 for (c in 1:B) {
-  est_tot <- sum((rho_boot[c])/p)
-  est_boot <- append(est_boot, est_tot)
+  est_boot <- append(est_boot, sum((rho_boot[c])/p))
 }
-  
+
 est_boot <- sort(est_boot)
 ```
 
@@ -178,7 +125,8 @@ rho_init <- tibble(.rows = n)
   # assign(ech_, df_boot[c])
   a <- c()
   for (i in 1:n) {
-      a <- append(a, circle(random_points[i, 1], random_points[i, 2], R))
+    # loc_var <- 
+    a <- append(a, circle_nb(random_points[i, 1], random_points[i, 2], R))
     }
   # a <- circle(df_boot[(2*c)-1], df_boot[2*c], R)
   # print(col_)
@@ -224,7 +172,7 @@ rho <- function(df, indice){
 ```
 
 ```{r}
-res_boot <- boot(data=random_points, statistic=circle)
+res_boot <- boot(data=random_points, statistic=circle_nb)
 res_boot
 # Doesn't work
 ```
@@ -293,6 +241,7 @@ theta <- function(x,xdata){
   a <- c()
   for (i in 1:n) {
     a <- append(a, circle(xdata[i,1], xdata[i,2], R))
+    # Change: circle_nb!!!
   }
   est_nb <- sum((a)/p)
 }
@@ -301,6 +250,14 @@ results <- bcanon(1:n,150,theta,random_points, alpha = 0.95)
 
 ```{r}
 results$confpoints # NaN
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
 ```{r}

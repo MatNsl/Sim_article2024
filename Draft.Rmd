@@ -245,7 +245,37 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 # p <- sum(rep((1/1000)*(1/1000)*((R^2)*pi)/2, n))
 ```
 
+## Circle
 
+# Circle2
+
+```{r}
+  # list_trees <- c()
+  # for (plant in 1:nrow(trees)) {
+  #   if (is_point_in_circle(x1, x2, trees[plant, 1], trees[plant, 2], R)){
+  #     list_trees <- append(list_trees, plant)
+  #   }
+    
+  # }
+```
+
+
+## Draft for bootstrap
+
+```{r}
+# res[(res$ech1$x == res$ech1$x[1]),]
+# res[(res$ech2$x == res$ech1$x[1]),]
+# Gives the same pair
+
+# res[(res$ech2$x == res$ech2$x[14]),]
+# Gives 1 repeated pair twice for the same sample b = 2
+```
+
+```{r}
+# Try to do bootstrap, success
+# test <- data.frame(col = c(1:3))
+# res <- f_boot(test, 3)
+```
 
 
 

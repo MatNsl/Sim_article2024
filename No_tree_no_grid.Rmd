@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
-library(tibble) # for add_column
+library(tibble) # for add_column and tibble
 ```
 
 # Preliminaries

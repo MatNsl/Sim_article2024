@@ -9,14 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("boot") # for bootstrap
-```
-
-```{r}
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
-library(tibble) # for add_column
-library(boot)
+library(tibble) # for add_column and tibble
 ```
 
 # Preliminaries
@@ -88,7 +83,7 @@ rm(a,b,val,col_names, point, new_col)
 ```{r}
 # Creating a local variable (cf pages 10-11 in Trinh et alii (2024))
 local_var <- c()
-source("~/work/Sim_article2024/Inc_area.R")
+source("~/work/Sim_article2024/Useful_functions/Inc_area.R")
 for (placette in 1:n) {
   local_var <- append(local_var, sum(trees_in[trees_in[placette] != 0,]/inc_area(c(random_points[placette,]$x, random_points[placette,]$y),0,0,1000,1000,R)))
 }
