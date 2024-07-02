@@ -107,4 +107,6 @@ time.taken3 <- end.time - start.time
 # Attention: Inc_area.R !!!
 # Time difference of 0.005484343 secs
 
+### Cyclomatic complexity?
+# cyclocomp(circle) # 1
 

@@ -32,6 +32,11 @@ trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
 ```
 
 ```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
 ### Constant values
 
 # Sample size
@@ -79,34 +84,25 @@ f_boot <- function(df_sample, B){
 df_boot <- f_boot(random_points, B)
 ```
 
-```{r}
-# Function to produce a local variable
-source("~/work/Sim_article2024/Useful_functions/Circle.R")
-```
+# Estimations and confidence intervals based on the bootstrap samples
+
+## With one single circle
 
 ```{r}
-rho_boot <- tibble(.rows = n)
+# Estimation of the total number of trees for each bootstrap sample
+est_boot <- c()
 for (c in 1:B) {
-  # assign(ech_, df_boot[c])
   a <- c()
   for (i in 1:n) {
     a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
   }
-  rho_boot <- rho_boot %>% add_column(new_col = a)
-  colnames(rho_boot)[c] <- paste("est", c, sep = "")
+  est_boot <- append(est_boot, sum(a/p))
 }
-
-# List of estimated totals thus obtained from each sample
-est_boot <- c()
-for (c in 1:B) {
-  est_boot <- append(est_boot, sum((rho_boot[c])/p))
-}
-
 est_boot <- sort(est_boot)
 ```
 
 ```{r}
-rm(a, c, i, col_names, col_)
+rm(a, c, i)
 ```
 
 ```{r}
@@ -117,39 +113,77 @@ cat("Un intervalle de confiance à 95% par la méthode des percentiles est : [",
 ```
 
 ```{r}
-rho_init <- tibble(.rows = n)
-# col_names <- c()
-# for (c in 1:B) {
-#   col_ <- paste("est", c, sep = "")
-  # ech_ <- paste("ech", c, sep = "")
-  # assign(ech_, df_boot[c])
-  a <- c()
-  for (i in 1:n) {
-    # loc_var <- 
-    a <- append(a, circle_nb(random_points[i, 1], random_points[i, 2], R))
-    }
-  # a <- circle(df_boot[(2*c)-1], df_boot[2*c], R)
-  # print(col_)
-  rho_init <- rho_init %>% add_column("ech_init" = a) # 
-  # col_names <- append(col_names, col_)
-  # colnames(rho_boot) <- col_names
-# }
+a <- c()
+for (i in 1:n) {
+  a <- append(a, circle_nb(random_points[i, 1], random_points[i, 2], R))
+}
 
-# colnames(rho_boot) <- "ech_init"
+# Estimated total thus obtained from the initial sample
+est_init <- sum(a/p)
 
-# 3rd step: List of estimated totals thus obtained from each sample
-est_init <- c()
-
-est_tot <- sum((rho_init[1])/p)
-est_init <- append(est_init, est_tot)
-
-est_init <- sort(est_init)
 ```
 
 ```{r}
 # Confidence Interval based on the reverse percentile approach
 cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]" )
 ```
+
+## With three circles
+
+```{r}
+### With 3 circles as described in Trinh et alii (2024), page 8
+
+est_boot_3 <- c()
+for (c in 1:B) {
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle3_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], 15, 9, 6))
+  }
+  est_boot_3 <- append(est_boot_3, sum(a/p))
+}
+
+est_boot_3 <- sort(est_boot_3)
+
+```
+
+```{r}
+# Confidence Interval based on the percentile approach
+lim_inf <- est_boot_3[floor(B*2.5/100)]
+lim_sup <- est_boot_3[B - floor(B*2.5/100)]
+cat("Un intervalle de confiance à 95% par la méthode des percentiles est : [", lim_inf, ";", lim_sup, "]" )
+```
+
+```{r}
+a <- c()
+for (i in 1:n) {
+  a <- append(a, circle3_nb(random_points[i, 1], random_points[i, 2], 15, 9, 6))
+}
+
+# Estimated total thus obtained from the initial sample
+est_init_3 <- sum(a/p)
+
+```
+
+```{r}
+# Confidence Interval based on the reverse percentile approach
+cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init_3*2 - lim_sup, ";", est_init_3*2 - lim_inf, "]" )
+```
+
+
+```{r}
+est_boot3 <- c()
+for (c in 1:B) {
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], 15))
+  }
+  est_boot3 <- append(est_boot3, sum(a/p))
+}
+
+est_boot3 <- sort(est_boot3)
+
+```
+
 
 ```{r}
 # Same result with function?
@@ -264,3 +298,6 @@ results$confpoints # NaN
 
 ```
 
+```{r}
+
+```

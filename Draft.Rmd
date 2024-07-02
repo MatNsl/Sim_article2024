@@ -277,5 +277,108 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 # res <- f_boot(test, 3)
 ```
 
+```{r}
+# To evaluate complexity
+install.packages("cyclocomp")
+```
+
+```{r}
+library(cyclocomp)
+```
+
+```{r}
+cyclocomp(circle_nb) # 1
+```
+
+```{r}
+# Probably less efficient than the version actually used in Bootstrap.Rmd
+start.time <- Sys.time()
+
+rho_boot <- tibble(.rows = n)
+for (c in 1:B) {
+  # assign(ech_, df_boot[c])
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
+  }
+  rho_boot <- rho_boot %>% add_column(new_col = a)
+  colnames(rho_boot)[c] <- paste("est", c, sep = "")
+}
+
+# List of estimated totals thus obtained from each sample
+est_boot <- c()
+for (c in 1:B) {
+  est_boot <- append(est_boot, sum((rho_boot[c])/p))
+}
+
+est_boot <- sort(est_boot)
+
+end.time <- Sys.time()
+time.taken1 <- end.time - start.time
+
+time.taken1
+
+# Time difference of 52.57304 secs
+# Time difference of 52.57391 secs
+# Time difference of 54.01066 secs
+```
+
+```{r}
+### More efficient??? Slower than the above version
+
+start.time <- Sys.time()
+
+rho_boot <- tibble(.rows = n)
+for (c in 1:B) {
+  # assign(ech_, df_boot[c])
+  a <- c()
+  for (i in 1:n) {
+    if(circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], R) != 0){
+    a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], R))
+    }
+  }
+  a2 <- append(a, rep(0, n-length(a)))
+  rho_boot <- rho_boot %>% add_column(new_col = a2)
+  colnames(rho_boot)[c] <- paste("est", c, sep = "")
+}
+
+# List of estimated totals thus obtained from each sample
+est_boot2 <- c()
+for (c in 1:B) {
+  est_boot2 <- append(est_boot2, sum((rho_boot[c])/p))
+}
+
+est_boot2 <- sort(est_boot2)
+
+end.time <- Sys.time()
+time.taken2 <- end.time - start.time
+
+time.taken2
+
+# Idea: "a" is sparse: let's simplify by shortening it
+# Time difference of 1.526216 mins :(
+# Modif: still not good
+# Time difference of 1.45528 mins
+
+# That one works (and still too long)
+# Time difference of 1.126081 mins
+# Time difference of 1.094733 mins
+```
+
+```{r}
+# For the version actually used in Bootstrap.Rmd
+start.time <- Sys.time()
+
+end.time <- Sys.time()
+time.taken3 <- end.time - start.time
+
+time.taken3
+
+# Time difference of 54.02127 secs
+# Time difference of 50.4839 secs
+# Time difference of 53.94593 secs
+```
+
+
 
 
