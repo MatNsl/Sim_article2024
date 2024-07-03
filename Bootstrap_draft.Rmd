@@ -1,7 +1,7 @@
 ---
-title: "Bootstrap approach for confidence intervals"
-output: pdf_document
-date: "2024-06-26"
+title: "Bootstrap_draft"
+output: html_document
+date: "2024-07-03"
 ---
 
 ```{r setup, include=FALSE}
@@ -9,9 +9,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+install.packages("boot") # for bootstrap
+```
+
+```{r}
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
 library(tibble) # for add_column
+library(boot)
 ```
 
 Notes from Efron and Tibshirani (1993):
@@ -33,14 +38,14 @@ source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ### Constant values
 
 # Sample size
-n <- 100
+n <- 50
 
 # Marginal density: density of the uniform distribution over 1:1000
 # Which leads us to the inclusion density function
 p <- sum(rep((1/1000)*(1/1000), n))
 
 # Number of bootstrap samples
-B <- 500
+B <- 100
 
 # Radius to consider for the circle around each sampled point
 R <- 5
@@ -95,6 +100,17 @@ est_boot <- sort(est_boot)
 ```
 
 ```{r}
+# Estimation of the total number of trees for each bootstrap sample
+est_boot <- c()
+for (c in 1:B) {
+  # a <- circle_nb(rbind(df_boot[, (2*c)-1], df_boot[, 2*c], c(rep(R,n))))
+  a <- apply(df_boot[, (2*c)-1], df_boot[, 2*c], c(rep(R,n)), MARGIN = 1, FUN = circle_nb)
+  est_boot <- append(est_boot, sum(a/p))
+}
+est_boot <- sort(est_boot)
+```
+
+```{r}
 rm(a, c, i)
 ```
 
@@ -122,7 +138,7 @@ rm(a, i)
 
 ```{r}
 # Confidence interval based on the reverse percentile approach
-cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : \n[", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]" )
+cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]" )
 ```
 
 ## With three circles
@@ -162,15 +178,12 @@ est_init_3 <- sum(a/p)
 
 ```{r}
 # Confidence interval based on the reverse percentile approach
-cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : \n[", est_init_3*2 - lim_sup, ";", est_init_3*2 - lim_inf, "]" )
+cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init_3*2 - lim_sup, ";", est_init_3*2 - lim_inf, "]" )
 ```
 
 # BCA and ABC bootstrap CI
 
 ```{r}
-## WARNING:
-## Useless function for now!
-
 # Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
 # Function explained in Efron and Tibshirani (1993)
 bcanon <- function(x,bootsam,theta,...,alpha =
@@ -240,7 +253,6 @@ bcanon <- function(x,bootsam,theta,...,alpha =
 ```
 
 ```{r}
-# bcanon(random_points,df_boot,circle_nb,alpha = .95)
-# Produces an error
+bcanon(random_points,df_boot,circle_nb,alpha = .95)
 ```
 

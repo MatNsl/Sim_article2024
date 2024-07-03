@@ -1,7 +1,7 @@
 ### Functions to produce local variables based on circles -----
 
 ## Function to produce the local variable for the number of trees
-circle_nb <- function(x1, x2, R){
+circle_nb <- function(x1, x2, R=5){
   # 2 coordinates (x1, x2) and a radius (R)
   
   # Preliminary: inclusion area
@@ -17,7 +17,7 @@ circle_nb <- function(x1, x2, R){
 # circle_vol <- function(x1, x2, R){}
 
 ## Function to produce the local variable for the number of trees with 3 circle
-circle3_nb <- function(x1, x2, R1, R2, R3){
+circle3_nb <- function(x1, x2, R1=15, R2=9, R3=6){
   # 2 coordinates (x1, x2) and 3 radii (R1 > R2 > R3)
   
   # Preliminary: inclusion area
