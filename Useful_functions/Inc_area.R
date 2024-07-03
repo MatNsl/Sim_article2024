@@ -1,5 +1,12 @@
 ######## Translation of a SAS program ----------
 
+# Goal: calculate the area in common of a rectangle and a circle, 
+# given the fact that the center of the circle is inside the rectangle
+
+# coord: vector with coordinates of the center of the circle
+# x0F, y0F, x1F, y1F: define the rectangle
+# r: the radius of the circle
+
 inc_area <- function(coord,x0F, y0F, x1F, y1F, r){
   x <- coord[1]
   y <- coord[2]

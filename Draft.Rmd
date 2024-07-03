@@ -8,6 +8,32 @@ date: "2024-06-24"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Tessellation
+
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Define the size of the square space
+space_size <- 10
+
+# Define the size of the smaller squares
+square_size <- 1
+
+# Create a data frame to store the coordinates of the squares
+squares <- data.frame(
+  x = rep(seq(0, space_size - square_size, by = square_size), each = space_size / square_size),
+  y = rep(seq(0, space_size - square_size, by = square_size), times = space_size / square_size)
+)
+
+# Plot the tessellation
+ggplot() +
+  geom_tile(data = squares, aes(x = x, y = y), width = square_size, height = square_size, fill = "lightblue", color = "black") +
+  coord_fixed() +
+  theme_minimal() +
+  labs(title = "Square Tessellation", x = "X", y = "Y")
+```
+
 ## Draft
 
 ```{r}
@@ -277,6 +303,8 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 # res <- f_boot(test, 3)
 ```
 
+### Complexity
+
 ```{r}
 # To evaluate complexity
 install.packages("cyclocomp")
@@ -377,6 +405,120 @@ time.taken3
 # Time difference of 54.02127 secs
 # Time difference of 50.4839 secs
 # Time difference of 53.94593 secs
+```
+
+```{r}
+est_boot3 <- c()
+for (c in 1:B) {
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle_nb(df_boot[i, (2*c)-1], df_boot[i, 2*c], 15))
+  }
+  est_boot3 <- append(est_boot3, sum(a/p))
+}
+
+est_boot3 <- sort(est_boot3)
+
+```
+
+### A first package
+
+```{r}
+# Same result with function?
+boot.ci(rho_boot, type = "perc")
+# Doesn't work (df_boot, est_boot, rho_boot)
+```
+
+```{r}
+sum((random_points$x/random_points$y)/p)
+```
+
+```{r}
+rho <- function(df, indice){
+  d <- df[indice,] # to enable boot
+  return(sum((d$x/d$y)/p))
+}
+```
+
+```{r}
+res_boot <- boot(data=random_points, statistic=circle_nb)
+res_boot
+# Doesn't work
+```
+
+```{r}
+boot.ci(res_boot, type = "norm")
+```
+
+```{r}
+boot.ci(res_boot, type = "basic")
+# Warning in norm.inter(t, (1 + c(conf, -conf))/2) :
+#  extreme order statistics used as endpoints
+```
+
+```{r}
+# boot.ci(res_boot, type = "stud") 
+# Error in ci.out[[4L]] : subscript out of bounds
+```
+
+```{r}
+boot.ci(res_boot, type = "perc") 
+# Error in ci.out[[4L]] : subscript out of bounds
+```
+
+```{r}
+boot.ci(res_boot, type = "bca") 
+# Error in bca.ci(boot.out, conf, index[1L], L = L, t = t.o, t0 = t0.o,  : 
+#  estimated adjustment 'a' is NA
+```
+
+### Another package
+
+```{r}
+install.packages("bootstrap")
+library(bootstrap)
+```
+
+```{r}
+## The most simple function
+f_try <- function(x){
+  1
+}
+```
+
+```{r}
+theta <- function(x){mean(x)}
+```
+
+```{r}
+patch.boot <- bootstrap(x = random_points$x,nboot = 1000,theta = theta, func=NULL)
+```
+
+```{r}
+sd(patch.boot$thetastar) # bootstrapped standard error
+```
+
+```{r}
+bcanon(random_points$x, 1000, theta = theta)
+```
+
+```{r}
+# xdata <- matrix(rnorm(30),ncol=2)
+n <- 100
+# theta <- function(x,xdata){ cor(xdata[x,1],xdata[x,2]) }
+theta <- function(x,xdata){
+  a <- c()
+  for (i in 1:n) {
+    a <- append(a, circle(xdata[i,1], xdata[i,2], R))
+    # Change: circle_nb!!!
+  }
+  est_nb <- sum((a)/p)
+}
+results <- bcanon(1:n,150,theta,random_points, alpha = 0.95)
+```
+
+```{r}
+results$confpoints # NaN
 ```
 
 

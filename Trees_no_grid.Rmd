@@ -146,20 +146,14 @@ true_vs_MC <- function(n, B, R){
   # 2nd step: creating the values corresponding to the function
   # Based on each sampled pair in all samples
   rho_MC <- tibble(.rows = n)
-    # data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
-  col_names <- c()
   for (c in 1:B) {
-    col_ <- paste("est", c, sep = "")
     a <- c()
     for (i in 1:n) {
       a <- append(a, circle(series_MC[i, (2*c)-1], series_MC[i, 2*c], R))
     }
     rho_MC <- rho_MC %>% add_column(col_ = a)
-    col_names <- append(col_names, col_)
+    colnames(rho_MC)[c] <- paste("est", c, sep = "")
   }
-  # rho_MC$x.1 <- NULL
-  # rho_MC$y.1 <- NULL
-  colnames(rho_MC) <- col_names
   
   # 3rd step: List of estimated totals thus obtained from each sample
   est_MC <- c()
@@ -177,6 +171,7 @@ true_vs_MC <- function(n, B, R){
 ```{r}
 res <- true_vs_MC(n = 100, B = 1000, R = 5)
 cat("True number of trees:", res[1], "\nMean of all the estimations (Monte Carlo):", res[2])
+# Ex:
 # True number of trees: 30942 
 # Mean of all the estimations (Monte Carlo): 30954.24
 ```
