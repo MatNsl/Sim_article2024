@@ -178,7 +178,7 @@ bcanon <- function(x,bootsam,theta,...,alpha =
     if (!all(alpha < 1) || !all(alpha > 0))
       stop("All elements of alpha must be in (0,1)")
 
-    alpha_sorted <- sort(alpha)
+    # alpha_sorted <- sort(alpha)
     # if (nboot <= 1/min(alpha_sorted[1],1-alpha_sorted[length(alpha_sorted)]))
     #   warning("nboot is not large enough to estimate your chosen alpha.")
 
