@@ -213,6 +213,46 @@ time.taken
 # Time difference of 12.57769 mins
 ```
 
+## The same thing with the total volume
+
+```{r}
+ci_boot_vol <- function(df_init, df_boot){
+  # df: dataframe with 2*B columns and n rows
+  
+  ## 1st step: 1 estimation for each sample
+  est_boot <- c()
+  for (c in 1:B) {
+    a <- mapply(circle3_vol, df_boot[, (2*c)-1], df_boot[, 2*c], MoreArgs = list(15, 9, 6))
+    est_boot <- append(est_boot, sum(a/p))
+  }
+  est_boot <- sort(est_boot)
+  
+  ## 2nd step: percentile CI
+  lim_inf <- est_boot[floor(B*2.5/100)]
+  lim_sup <- est_boot[B - floor(B*2.5/100)]
+  cat("Un intervalle de confiance à 95% par la méthode des percentiles est : 
+      [", lim_inf, ";", lim_sup, "]\n" )
+  
+  ## 3rd step: reverse percentile CI
+  # Target: the initial sample alone
+  a <- mapply(circle3_vol, df_init[, 1], df_init[, 2], MoreArgs = list(15, 9, 6))
+  est_init <- sum(a/p) # Estimated total thus obtained from the initial sample
+  cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : 
+      [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]\n" )
+  return(c(est_init,lim_inf,lim_sup))
+}
+```
+
+```{r}
+start.time <- Sys.time()
+
+res <- ci_boot_vol(random_points,df_boot)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+```
+
 
 
 
