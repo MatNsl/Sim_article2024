@@ -159,6 +159,10 @@ est_boot_3 <- sort(est_boot_3)
 ```
 
 ```{r}
+plot(density(est_boot_3))
+```
+
+```{r}
 # Confidence interval based on the percentile approach
 lim_inf <- est_boot_3[floor(B*2.5/100)]
 lim_sup <- est_boot_3[B - floor(B*2.5/100)]
@@ -219,15 +223,15 @@ bcanon <- function(x,bootsam,theta,...,alpha =
       thetastar <- append(thetastar, sum(a/p))
     }
     thetastar <- sort(thetastar)
-
+ 
     z0 <- qnorm(sum(thetastar<thetahat)/nboot)
     
     u <- rep(0,n)
     for(i in 1:n){
         # u[i] <- theta(x[-i],...)
-        x_i <- x[-i]
+        x_i <- x[-i,]
         a <- c()
-        for (j in 1:n) {
+        for (j in 1:(n-1)) {
           a <- append(a, theta(x_i[j, 1], x_i[j, 2]))
         }
         # Estimated total thus obtained from the initial sample
@@ -253,6 +257,177 @@ bcanon <- function(x,bootsam,theta,...,alpha =
 ```
 
 ```{r}
-bcanon(random_points,df_boot,circle_nb,alpha = .95)
+# Interval of intended coverage 1 - 2*alpha = .95 => alpha = .025
+bcanon(random_points,df_boot,circle_nb,alpha = c(.025, .975))
+# Error in if ((x >= x0F + r) & (x <= x1F - r) & (y >= y0F + r) & (y <=  : 
+#  missing value where TRUE/FALSE needed
+# Works!
 ```
+
+#### Si alpha = 0.95
+
+$confpoints
+     alpha bca point
+[1,]  0.95   42526.2
+
+$z0
+[1] 0.01504034
+
+$acc
+[1] 0.02810749
+
+$u
+  [1] 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28 31449.02 32340.28 32340.28 32340.28
+ [11] 32340.28 29921.13 32340.28 31194.37 32340.28 32340.28 31321.69 32340.28 31576.34 32340.28
+ [21] 32340.28 32340.28 32340.28 32340.28 31958.31 31576.34 32085.64 32340.28 32340.28 32340.28
+ [31] 32340.28 32340.28 31194.37 31576.34 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28
+ [41] 32340.28 32340.28 32340.28 31576.34 32340.28 31576.34 32340.28 32340.28 32340.28 31321.69
+ [51] 31576.34 32340.28 32340.28 30939.72 30303.10 31194.37 32340.28 32340.28 32340.28 32340.28
+ [61] 32340.28 32340.28 31067.04 32340.28 32340.28 32340.28 32340.28 30939.72 32340.28 30175.78
+ [71] 32340.28 32340.28 32340.28 32340.28 32340.28 31194.37 32340.28 32340.28 32340.28 32340.28
+ [81] 32340.28 31958.31 32340.28 32340.28 32340.28 32340.28 32340.28 31576.34 32340.28 31194.37
+ [91] 31194.37 32340.28 32340.28 32340.28 30812.40 30685.07 31067.04 32340.28 31321.69 32340.28
+
+$call
+bcanon(x = random_points, bootsam = df_boot, theta = circle_nb, 
+    alpha = 0.95)
+
+#### Si alpha = 0.25
+
+$confpoints
+     alpha bca point
+[1,]  0.25  28520.57
+
+$z0
+[1] 0.01504034
+
+$acc
+[1] 0.02810749
+
+$u
+  [1] 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28 31449.02 32340.28 32340.28 32340.28
+ [11] 32340.28 29921.13 32340.28 31194.37 32340.28 32340.28 31321.69 32340.28 31576.34 32340.28
+ [21] 32340.28 32340.28 32340.28 32340.28 31958.31 31576.34 32085.64 32340.28 32340.28 32340.28
+ [31] 32340.28 32340.28 31194.37 31576.34 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28
+ [41] 32340.28 32340.28 32340.28 31576.34 32340.28 31576.34 32340.28 32340.28 32340.28 31321.69
+ [51] 31576.34 32340.28 32340.28 30939.72 30303.10 31194.37 32340.28 32340.28 32340.28 32340.28
+ [61] 32340.28 32340.28 31067.04 32340.28 32340.28 32340.28 32340.28 30939.72 32340.28 30175.78
+ [71] 32340.28 32340.28 32340.28 32340.28 32340.28 31194.37 32340.28 32340.28 32340.28 32340.28
+ [81] 32340.28 31958.31 32340.28 32340.28 32340.28 32340.28 32340.28 31576.34 32340.28 31194.37
+ [91] 31194.37 32340.28 32340.28 32340.28 30812.40 30685.07 31067.04 32340.28 31321.69 32340.28
+
+$call
+bcanon(x = random_points, bootsam = df_boot, theta = circle_nb, 
+    alpha = 0.25)
+
+#### Si alpha = c(0.025, 0.975)
+
+$confpoints
+     alpha bca point
+[1,] 0.025  22154.37
+[2,] 0.975  44308.74
+
+$z0
+[1] 0.01504034
+
+$acc
+[1] 0.02810749
+
+$u
+  [1] 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28 31449.02 32340.28 32340.28 32340.28
+ [11] 32340.28 29921.13 32340.28 31194.37 32340.28 32340.28 31321.69 32340.28 31576.34 32340.28
+ [21] 32340.28 32340.28 32340.28 32340.28 31958.31 31576.34 32085.64 32340.28 32340.28 32340.28
+ [31] 32340.28 32340.28 31194.37 31576.34 32340.28 32340.28 32340.28 32340.28 32340.28 32340.28
+ [41] 32340.28 32340.28 32340.28 31576.34 32340.28 31576.34 32340.28 32340.28 32340.28 31321.69
+ [51] 31576.34 32340.28 32340.28 30939.72 30303.10 31194.37 32340.28 32340.28 32340.28 32340.28
+ [61] 32340.28 32340.28 31067.04 32340.28 32340.28 32340.28 32340.28 30939.72 32340.28 30175.78
+ [71] 32340.28 32340.28 32340.28 32340.28 32340.28 31194.37 32340.28 32340.28 32340.28 32340.28
+ [81] 32340.28 31958.31 32340.28 32340.28 32340.28 32340.28 32340.28 31576.34 32340.28 31194.37
+ [91] 31194.37 32340.28 32340.28 32340.28 30812.40 30685.07 31067.04 32340.28 31321.69 32340.28
+
+$call
+bcanon(x = random_points, bootsam = df_boot, theta = circle_nb, 
+    alpha = c(0.025, 0.975))
+
+
+```{r}
+# Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
+# Function explained in Efron and Tibshirani (1993)
+
+alpha <- .95
+x <- random_points
+bootsam <- df_boot
+theta <- circle_nb
+
+
+    if (!all(alpha < 1) || !all(alpha > 0))
+      stop("All elements of alpha must be in (0,1)")
+
+    # alpha_sorted <- sort(alpha)
+    # if (nboot <= 1/min(alpha_sorted[1],1-alpha_sorted[length(alpha_sorted)]))
+    #   warning("nboot is not large enough to estimate your chosen alpha.")
+
+    ### call <- match.call()
+    # n <- length(x)
+    n <- nrow(x)
+    # thetahat <- theta(x,...)
+    a <- c()
+    for (i in 1:n) {
+      a <- append(a, theta(x[i, 1], x[i, 2]))
+    }
+    # Estimated total thus obtained from the initial sample
+    thetahat <- sum(a/p)
+    
+    nboot <- length(bootsam)/2
+    # bootsam<- matrix(sample(x,size=n*nboot,replace=TRUE),nrow=nboot)
+
+    # thetastar <- apply(bootsam,1,theta,...)
+    thetastar <- c()
+    for (c in 1:B) {
+      a <- c()
+      for (i in 1:n) {
+        a <- append(a, theta(bootsam[i, (2*c)-1], bootsam[i, 2*c]))
+      }
+      thetastar <- append(thetastar, sum(a/p))
+    }
+    thetastar <- sort(thetastar)
+
+    z0 <- qnorm(sum(thetastar<thetahat)/nboot)
+    
+    u <- rep(0,n)
+    
+    i <- 1
+    for(i in 1:n){
+        # u[i] <- theta(x[-i],...)
+        x_i <- x[-i,]
+        a <- c()
+        
+        ## Bug dans cette boucle
+        j <- 1
+        for (j in 1:(n-1)) {
+          print(j)
+          a <- append(a, theta(x_i[j, 1], x_i[j, 2]))
+        }
+        # Estimated total thus obtained from the initial sample
+        u[i] <- sum(a/p)
+    }
+    uu <- mean(u)-u
+    acc <- sum(uu*uu*uu)/(6*(sum(uu*uu))^1.5)
+    
+    zalpha <- qnorm(alpha)
+    
+    tt <- pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))
+    
+    confpoints <- quantile(x=thetastar,probs=tt,type=1)
+    names(confpoints) <- NULL
+    confpoints <- cbind(alpha,confpoints)
+    dimnames(confpoints)[[2]] <- c("alpha","bca point")
+    return(list(confpoints=confpoints, 
+                z0=z0, 
+                acc=acc, 
+                u=u, 
+                call=call))
+```
+
+
 
