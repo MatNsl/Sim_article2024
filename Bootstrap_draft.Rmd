@@ -185,6 +185,14 @@ est_init_3 <- sum(a/p)
 cat("Un intervalle de confiance à 95% par la méthode des reverse percentiles est : [", est_init_3*2 - lim_sup, ";", est_init_3*2 - lim_inf, "]" )
 ```
 
+```{r}
+# Visualizing the density, the interval and the first estimation
+plot(density(est_boot_3), xlab="Nombre d'arbres",ylab="", main = "Distribution based on bootstrap", las = 2)
+abline(v=lim_inf, col="blue")
+abline(v=lim_sup, col="blue")
+abline(v=est_init_3, col="red")
+```
+
 # BCA and ABC bootstrap CI
 
 ```{r}

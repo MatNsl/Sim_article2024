@@ -216,6 +216,10 @@ time.taken
 ## The same thing with the total volume
 
 ```{r}
+cat("Volume total de la forêt :", sum(trees$v), "m^3")
+```
+
+```{r}
 ci_boot_vol <- function(df_init, df_boot){
   # df: dataframe with 2*B columns and n rows
   
@@ -251,8 +255,14 @@ res <- ci_boot_vol(random_points,df_boot)
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 time.taken
-```
 
+# Ex:
+# Un intervalle de confiance à 95% par la méthode des percentiles est : 
+#       [ 3819.372 ; 7249.115 ]
+# Un intervalle de confiance à 95% par la méthode des reverse percentiles est : 
+#       [ 3794.295 ; 7224.039 ]
+# Time difference of 30.0428 mins
+```
 
 
 

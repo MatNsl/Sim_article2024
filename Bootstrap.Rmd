@@ -232,6 +232,9 @@ res <- bcanon(random_points,df_boot,circle_nb,alpha = c(.025, .975))
 
 ```{r}
 cat("Un intervalle de confiance à 95% par la méthode BCa est : [", res$confpoints[1,2], ";", res$confpoints[2,2], "]")
+
+# Ex:
+# Un intervalle de confiance à 95% par la méthode BCa est : [ 22154.37 ; 44308.74 ]
 ```
 
 

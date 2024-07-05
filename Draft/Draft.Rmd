@@ -761,6 +761,23 @@ bcanon <- function(x,bootsam,theta,...,alpha =
 # Produces an error
 ```
 
+# Alarm / beep / message when it finishes running
+
+```{r}
+#Have R email you when it's done running.
+###Calculating - your wish is R's command.
+library(mail)
+#Send yourself an email - specify your preferred email address, subject, and message. The password is fixed at "rmail".
+sendmail("xxxxx@xxxxx.com", subject="Notification from R", message="Conditions finished running!", password="rmail")
+
+alarm()
+
+install.packages("audio")
+library(audio)
+install.packages("beepr")
+library(beepr)
+beep()
+```
 
 
 
