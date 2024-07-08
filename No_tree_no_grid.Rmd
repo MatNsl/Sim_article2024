@@ -20,7 +20,7 @@ We do not need the artificial forest for now. We just need a virtual 1000x1000 s
 
 ```{r}
 # Sample size
-n <- 100
+n <- 1000
 ```
 
 ```{r}
@@ -104,7 +104,7 @@ random_points$rho2 <- f_ind(random_points$x,random_points$y)
 ```{r}
 # Estimated value
 est_ind <- sum((random_points$rho2)/p)
-# 510000 e.g.
+# 492000 e.g.
 ```
 
 ```{r}
@@ -129,7 +129,7 @@ val_x <- 500000000
 ```{r}
 # Estimated value
 est_x <- sum((random_points$x)/p)
-# 499690876 e.g.
+# 490781983 e.g.
 ```
 
 ```{r}
@@ -152,7 +152,7 @@ est_carre <- sum((random_points$carre)/p)
 
 ```{r}
 var_area <- ((1000*1000)/(n-1))*est_carre - (1/(n-1))*(est_area^2)
-# The empirical variance is null as expected
+# The variance estimation is null as expected
 ```
 
 ```{r}
@@ -164,26 +164,26 @@ varTHEO_area <- area/p - (1/n)*(area^2)
 
 ```{r}
 # Conclusion
-cat("Variance théorique :", varTHEO_area, "\nVariance empirique :", var_area)
+cat("Variance théorique :", varTHEO_area, "\nEstimation de la variance :", var_area)
 ```
 
 ## Case of half of the area
 
 ```{r}
 var_ind <- ((1000*1000)/(n-1))*est_ind - (1/(n-1))*(est_ind^2)
-# Empirical variance: 2.491e+09 e.g.
+# Variance estimation: 250186186 e.g.
 ```
 
 ```{r}
 # f_ind(x,y)^2 = f_ind(x,y)
 varTHEO_ind <- half_area/p - (1/n)*(half_area^2)
-# Theoretical variance: 2.5e+09, i.e. around 2.498e+09
+# Theoretical variance: 2.5e+08, i.e. around 250186186
 # Close to the empirical one
 ```
 
 ```{r}
 # Conclusion
-cat("Variance théorique :", varTHEO_ind, "\nVariance empirique :", var_ind)
+cat("Variance théorique :", varTHEO_ind, "\nEstimation de la variance :", var_ind)
 ```
 
 ## Case of the function that keeps x
@@ -204,19 +204,19 @@ est_x2 <- sum(((random_points$x)^2)/p)
 
 ```{r}
 var_x <- ((1000*1000)/(n-1))*est_x2 - (1/(n-1))*(est_x^2)
-# Empirical variance: 8.407871e+14 ?!
+# Variance estimation: 8.341029e+13
 ```
 
 ```{r}
 # f_ind(x,y)^2 = f_ind(x,y)
 varTHEO_x <- val_x2/p - (1/n)*(val_x^2)
-# Theoretical variance: 2.5e+09, i.e. around 2.498e+09
-# Close to the empirical one
+# Theoretical variance: 8.333333e+13, i.e. around 8.341029e+13
+# Close to the estimated one
 ```
 
 ```{r}
 # Conclusion
-cat("Variance théorique :", varTHEO_x, "\nVariance empirique :", var_x)
+cat("Variance théorique :", varTHEO_x, "\nEstimation de la variance :", var_x)
 ```
 
 # Monte Carlo
@@ -249,7 +249,7 @@ colnames(series_MC) <- col_names
 ```
 
 ```{r}
-rm(a1, a2, x, y, b, col_, col_names) # Useless now
+rm(a1, a2, x, y, b, col_names) # Useless now
 ```
 
 ```{r}
@@ -295,13 +295,13 @@ rm(c, est_tot) # Useless now
 # Empirical mean based on MC
 cat("Total à estimer :", val_x, "\nMoyenne des estimations obtenues :", mean(est_MC)) 
 # should be close to 5e+08
-# 499121662 e.g.
+# 500182431 e.g.
 ```
 
 ```{r}
-# Empirical standard deviation based on MC
-cat("Variance associée aux échantillons de Monte Carlo :", sd(est_MC))
-# 28710306 e.g.
+# Variance estimation based on MC
+cat("Theoretical variance:", varTHEO_x, "\nVariance associée aux échantillons de Monte Carlo :", var(est_MC))
+# 8.512412e+13 e.g.
 ```
 
 ## Automation of the MC method with a function
@@ -330,7 +330,6 @@ true_vs_MC <- function(n, B, f){
   
   # 2nd step: creating the values corresponding to the function
   rho_MC <- tibble(.rows = n)
-    # data.frame(x.1 = rep(0, n), y.1 = rep(0, n))
   col_names <- c()
   for (c in 1:B) {
     col_ <- paste("est", c, sep = "")
@@ -339,8 +338,6 @@ true_vs_MC <- function(n, B, f){
     col_names <- append(col_names, col_)
     colnames(rho_MC) <- col_names
   }
-  # rho_MC$x.1 <- NULL
-  # rho_MC$y.1 <- NULL
   colnames(rho_MC) <- col_names
   
   # 3rd step: List of estimated totals thus obtained from each sample
@@ -349,32 +346,40 @@ true_vs_MC <- function(n, B, f){
     est_MC <- append(est_MC, sum((rho_MC[c])/p))
   }
   
-  est_value <- mean(est_MC) # Estimated value
-  return(est_value)
+  return(c(mean(est_MC), var(est_MC)))
+  # Estimated value and Monte-Carlo variance
 }
 ```
 
 ```{r}
 res <- true_vs_MC(n = 1000, B = 1000, f = f_1)
-cat("True integral:", 1e+06, "\nMean of all the estimations:", res)
-# 1e+06 1e+06 (Equality as always)
+cat("True integral:", 1e+06, "\nMean of all the estimations:", res[1])
+cat("\n\nTheoretical variance:", varTHEO_area, "\nMonte-Carlo variance:", res[2])
+# Totals: 1e+06 and 1e+06 (Equality as always)
+# Variances: 0 and 0 (Equality as always)
 ```
 
 ```{r}
 res <- true_vs_MC(n = 1000, B = 1000, f = f_ind)
-cat("True integral:", 500000, "\nMean of all the estimations:", res)
-
+cat("True integral:", 500000, "\nMean of all the estimations:", res[1])
+cat("\n\nTheoretical variance:", varTHEO_ind, "\nMonte-Carlo variance:", res[2])
 # Ex:
-# True integral: 5e+05
-# Mean of all the estimations: 499600
+# True integral: 5e+05 
+# Mean of all the estimations: 499214
+
+# Theoretical variance: 2.5e+08 
+# Monte-Carlo variance: 245287491
 ```
 
 ```{r}
 res <- true_vs_MC(n = 1000, B = 1000, f = f_x)
-cat("True integral:", 5e+08, "\nMean of all the estimations:", res)
-
+cat("True integral:", 5e+08, "\nMean of all the estimations:", res[1])
+cat("\n\nTheoretical variance:", varTHEO_x, "\nMonte-Carlo variance:", res[2])
 # Ex:
-# True integral: 5e+08
-# Mean of all the estimations: 500189987
+# True integral: 5e+08 
+# Mean of all the estimations: 499874718
+
+# Theoretical variance: 8.333333e+13 
+# Monte-Carlo variance: 7.99389e+13
 ```
 

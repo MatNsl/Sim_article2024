@@ -37,7 +37,8 @@ circle3_nb <- function(x1, x2, R1=15, R2=9, R3=6){
   
   list_trees1 <- list_trees[(pi*list_trees$d130 > 117.5),] # List with the biggest trees
   list_trees2 <- list_trees[(pi*list_trees$d130 < 117.5) & (pi*list_trees$d130 > 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R2^2),] # medium trees
-  list_trees3 <- list_trees[(pi*list_trees$d130 > 23.5) & (pi*list_trees$d130 < 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R3^2),] # smallest trees
+  list_trees3 <- list_trees[(pi*list_trees$d130 < 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R3^2),] # smallest trees
+  # In the real NFI process, we should have in addition: (pi*list_trees$d130 > 23.5) &
   
   local_var1 <- sum(nrow(list_trees1)/inc_area(c(x1, x2),0,0,1000,1000,R1)) # Local variable for the biggest circle and the biggest trees
   local_var2 <- sum(nrow(list_trees2)/inc_area(c(x1, x2),0,0,1000,1000,R2)) # Local variable for the medium circle and the medium trees
@@ -58,7 +59,8 @@ circle3_vol <- function(x1, x2, R1=15, R2=9, R3=6){
   
   list_trees1 <- list_trees[(pi*list_trees$d130 > 117.5),] # List with the biggest trees
   list_trees2 <- list_trees[(pi*list_trees$d130 < 117.5) & (pi*list_trees$d130 > 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R2^2),] # medium trees
-  list_trees3 <- list_trees[(pi*list_trees$d130 > 23.5) & (pi*list_trees$d130 < 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R3^2),] # smallest trees
+  list_trees3 <- list_trees[(pi*list_trees$d130 < 70.5) & ((x1 - list_trees$x)^2 + (x2 - list_trees$y)^2 <= R3^2),] # smallest trees
+  # In the real NFI process, we should have in addition: (pi*list_trees$d130 > 23.5) &
   
   if (nrow(list_trees1) != 0){
   local_var1 <- sum((list_trees1$v)/inc_area(c(x1, x2),0,0,1000,1000,R1)) # Local variable for the biggest circle and the biggest trees

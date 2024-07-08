@@ -98,6 +98,24 @@ cat("An estimation of the total number of trees based on the sample:", est_nb)
 rm(placette)
 ```
 
+```{r}
+### Necessary step to calculate the theoretical variance
+
+
+
+# Creating a local variable (cf pages 10-11 in Trinh et alii (2024))
+local_var2 <- c()
+source("~/work/Sim_article2024/Useful_functions/Inc_area.R")
+for (placette in 1:n) {
+  local_var2 <- append(local_var2, (sum(trees_in[trees_in[placette] != 0,]/inc_area(c(random_points[placette,]$x, random_points[placette,]$y),0,0,1000,1000,R)))^2)
+}
+
+est_nb2 <- sum((local_var2)/p)
+
+
+cat("An estimation of the total number of trees based on the sample:", )
+```
+
 ## Automation
 
 A local variable is created, based on one pair of points (center of the circle) and the radius.
@@ -162,15 +180,15 @@ true_vs_MC <- function(n, B, R){
     est_MC <- append(est_MC, est_tot)
   }
   
-  true_value <- nrow(trees) # Theoretical value
-  est_value <- mean(est_MC) # Estimated value
-  return(c(true_value, est_value))
+  return(c(nrow(trees), mean(est_MC), var(est_MC)))
+  # Theoretical value of the total, estimated value of the total, Monte-Carlo variance
 }
 ```
 
 ```{r}
 res <- true_vs_MC(n = 100, B = 1000, R = 5)
 cat("True number of trees:", res[1], "\nMean of all the estimations (Monte Carlo):", res[2])
+cat("\n\nTheoretical variance:", , "\nMonte-Carlo variance:", res[3])
 # Ex:
 # True number of trees: 30942 
 # Mean of all the estimations (Monte Carlo): 30954.24
