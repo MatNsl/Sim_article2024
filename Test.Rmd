@@ -10,8 +10,6 @@ date: "2024-06-26"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-$\mapsto$ 1
-
 ```{r}
 vec_test <- c(0,1,2)
 f <- function(data, indice){
@@ -21,4 +19,14 @@ f <- function(data, indice){
 boot(data=vec_test, statistic=f, R=10)
 ```
 
+# Variance théorique
+
+```{r}
+for (k in 1:nrow(trees)) {
+  for (i in 1:k) {
+    
+  }
+  sum_i <- sum()
+}
+```
 

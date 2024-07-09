@@ -147,7 +147,7 @@ true_vs_MC <- function(n, B, R){
   # R: radius of the circle, taken into account for the sampling
   p <- sum(rep((1/1000)*(1/1000), n))
   
-  # 1st step: generating n samples
+  # 1st step: generating B samples
   series_MC <- data.frame(x.1 = runif(n, 0, 1000), y.1 = runif(n, 0, 1000))
   col_names <- c("x1", "y1")
   for (b in 2:B) {
