@@ -97,18 +97,20 @@ MC_boot <- function(n, B1, B2, f){
 }
 ```
 
+# Tests
+
 ```{r}
-MC_boot(n = 100, B1 = 1000, B2 = 200, f = circle3_nb)
+start.time <- Sys.time()
+
+res <- MC_boot(n = 100, B1 = 1000, B2 = 200, f = circle3_nb)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
 ```
 
 ```{r}
-
+cat("Mean of Monte-Carlo samples:", res[1], "\nMonte-Carlo variance:", res[2], "\nMean of the variance of bootstrap samples:", res[3])
 ```
-
-
-
-
-
-
-
 
