@@ -30,3 +30,63 @@ for (k in 1:nrow(trees)) {
 }
 ```
 
+# MC_boot
+
+## Tests
+
+```{r}
+start.time <- Sys.time()
+
+MC_boot(n = 100, B1 = 1000, B2 = 200, f = circle3_nb)
+# Way too long
+```
+
+```{r}
+start.time <- Sys.time()
+
+res <- MC_boot(n = 100, B1 = 500, B2 = 100, f = circle3_nb)
+
+end.time <- Sys.time()
+time.taken1 <- end.time - start.time
+
+time.taken1
+# Way too long
+```
+
+```{r}
+start.time <- Sys.time()
+
+res <- MC_boot(n = 50, B1 = 10, B2 = 5, f = circle3_nb)
+
+end.time <- Sys.time()
+time.taken2 <- end.time - start.time
+
+time.taken2
+# Time difference of 5.522393 secs
+# 31471.63 78177624.15 53692218.51
+```
+
+```{r}
+start.time <- Sys.time()
+
+res <- MC_boot(n = 100, B1 = 100, B2 = 50, f = circle3_nb)
+
+end.time <- Sys.time()
+time.taken2 <- end.time - start.time
+
+time.taken2
+# Time difference of 5.522393 secs
+# 31471.63 78177624.15 53692218.51
+```
+
+# Volume
+
+```{r}
+# Total volume of trees
+a <- mapply(circle3_vol, random_points[, 1], random_points[, 2], MoreArgs = list(15, 9, 6))
+est_init_vol <- sum(a/p)
+rm(a)
+cat("Volume of the forest:", sum(trees$v), "\nEstimation of the volume of the forest:", est_init_vol)
+```
+
+

@@ -26,7 +26,7 @@ circle_vol <- function(x1, x2, R=5){
   # list_trees: identifiers of targeted trees; local_var: local variable based on the volume of trees
 }
 
-## Function to produce the local variable for the number of trees with 3 circle
+## Function to produce the local variable for the number of trees with 3 circles
 circle3_nb <- function(x1, x2, R1=15, R2=9, R3=6){
   # 2 coordinates (x1, x2) and 3 radii (R1 > R2 > R3)
   
@@ -48,7 +48,7 @@ circle3_nb <- function(x1, x2, R1=15, R2=9, R3=6){
   # local_var: local variable based on the number of trees
 }
 
-## Function to produce the local variable for the number of trees with 3 circle
+## Function to produce the local variable for the number of trees with 3 circles
 circle3_vol <- function(x1, x2, R1=15, R2=9, R3=6){
   # 2 coordinates (x1, x2) and 3 radii (R1 > R2 > R3)
   
