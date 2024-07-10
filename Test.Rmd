@@ -89,4 +89,14 @@ rm(a)
 cat("Volume of the forest:", sum(trees$v), "\nEstimation of the volume of the forest:", est_init_vol)
 ```
 
+# Draft from adapt_boot
+
+```{r}
+plot(x = random_points[, 1], y = random_points$var, xlab = "x", main = "Points as a function of x", las = 1)
+```
+
+```{r}
+plot(x = random_points[, 2], y = random_points$var, xlab = "y", main = "Points as a function of y", las = 1)
+```
+
 

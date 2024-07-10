@@ -1,6 +1,6 @@
 ---
 title: "Adapting bootstrap to our problem"
-output: html_document
+output: pdf_document
 date: "2024-07-10"
 ---
 
@@ -13,6 +13,8 @@ library(readxl) # to read the initial file
 library(magrittr) # for pipes
 library(tibble) # for add_column
 ```
+
+The goal of this document is to create another bootstrap function that is adapted to the problem of continuous sampling with a grid. Indeed, we want a bootstrap function that takes into account the regularity of the sampling which is induced by the grid.
 
 # Preliminaries
 
@@ -104,20 +106,14 @@ cat("Number of trees:", nrow(trees), "\nEstimation of the number of trees:", est
 # Estimation of the number of trees: 30489.25
 ```
 
-```{r}
-plot(x = random_points[, 1], y = random_points$var, xlab = "x", main = "Points as a function of x", las = 1)
-```
-
-```{r}
-plot(x = random_points[, 2], y = random_points$var, xlab = "y", main = "Points as a function of y", las = 1)
-```
-
 # Bootstrap
 
 ```{r}
 # Number of bootstrap samples
 B <- 500
 ```
+
+Here, two methods are used: a naive one and an adapted one.
 
 ## First method to make bootstrap samples
 
@@ -277,28 +273,36 @@ comparison <- function(ncomp, B) {
     df_boot2 <- f_boot2(random_points, B)
     est_boot_2 <- est_boot1(df_boot2)
     
-    tot_mean <- append(tot_mean, as.numeric(abs(mean(est_boot_2)-30942) <  abs(mean(est_boot_1)-30942)))
+    tot_mean <- append(tot_mean, as.numeric(abs(mean(est_boot_2)-30942) <  abs(mean(est_boot_1)-30942))*2-1)
     # 1: the second method is better
-    tot_var <- append(tot_var, as.numeric(var(est_boot_2) <  var(est_boot_1)))
+    tot_var <- append(tot_var, as.numeric(var(est_boot_2) <  var(est_boot_1))*2-1)
     # 1: the second method is better
     b <- b+1
   }
-  return(tot_mean, tot_var)
+  return(list(tot_mean, tot_var))
 }
 ```
 
 ```{r}
-comparison(100, 500)
+res <- comparison(100, 500)
 ```
 
 ```{r}
-sum(tot_mean)
+# If it is positive, the second method is the best to estimate the total
+sum(res[[1]])
+# 10 e.g.
+# 18
 ```
 
 ```{r}
-sum(tot_var)
+# If it is positive, the second method is the best to minimize the variance
+sum(res[[2]])
+# 2 e.g.
+# 12
 ```
 
+# Conclusion
 
+Adapting bootstrap to the problem seems relevant.
 
 
