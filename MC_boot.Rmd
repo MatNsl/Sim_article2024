@@ -114,3 +114,58 @@ time.taken
 cat("Mean of Monte-Carlo samples:", res[1], "\nMonte-Carlo variance:", res[2], "\nMean of the variance of bootstrap samples:", res[3])
 ```
 
+# A second possibility
+
+Stop calculating the local variable for each bootstrap sample: it is already done with the initial sample!!!
+
+```{r}
+# Making of one estimation for each sample made by the bootstrap method
+est_boot1 <- function(df, p){
+  # df: dataframe with 3*B columns and n rows
+  
+  nboot <- length(df)/3
+  vec_est <- c()
+  for (c in 1:nboot) {
+    vec_est <- append(vec_est, sum(df[,3*c]/p))
+  }
+  vec_est <- sort(vec_est)
+  return(vec_est)
+  # Vector with one estimation for each sample
+}
+```
+
+```{r}
+### Function to automate Monte Carlo method
+
+MC_boot <- function(n, B1, B2, f){
+  # n: sample size; B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap;
+  # f: function to consider (2 arguments)
+  # Argument grid? (change n then)
+  p <- sum(rep((1/1000)*(1/1000), n))
+  
+  est_MC <- c()
+  mean_est_boot <- c()
+  var_est_boot <- c()
+  
+  for (b in 2:B1) {
+    # One MC iteration at a time
+    random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+    random_points$var <- mapply(f, random_points[, 1], random_points[, 2])
+    a <- sum(random_points$var/p)
+    est_MC <- append(est_MC, a)
+    
+    # Bootstrap iterations
+    df_boot <- f_boot(random_points, B2)
+    est_boot_val <- est_boot1(df_boot, p)
+    mean_est_boot <- append(mean_est_boot, mean(est_boot_val))
+    var_est_boot <- append(var_est_boot, var(est_boot_val))
+  }
+  return(c(mean(est_MC), var(est_MC), mean(var_est_boot)))
+  # Estimated value of the total, Monte-Carlo variance, mean of the bootstrap variance
+}
+```
+
+
+
+

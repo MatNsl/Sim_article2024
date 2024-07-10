@@ -284,25 +284,33 @@ comparison <- function(ncomp, B) {
 ```
 
 ```{r}
-res <- comparison(100, 500)
+res <- comparison(1000, 800)
 ```
 
 ```{r}
 # If it is positive, the second method is the best to estimate the total
 sum(res[[1]])
+# With ncomp = 100 and B = 500
 # 10 e.g.
 # 18
+
+# With ncomp = 1000 and B = 800
+# -4
 ```
 
 ```{r}
 # If it is positive, the second method is the best to minimize the variance
 sum(res[[2]])
+# With ncomp = 100 and B = 500
 # 2 e.g.
 # 12
+
+# With ncomp = 1000 and B = 800
+# 56
 ```
 
 # Conclusion
 
-Adapting bootstrap to the problem seems relevant.
+Adapting bootstrap to the problem seems relevant: it does not improve much the estimator but it reduces its variance.
 
 
