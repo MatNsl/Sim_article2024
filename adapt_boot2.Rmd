@@ -96,6 +96,7 @@ p <- sum(rep((1/1000)*(1/1000), n))
 
 ```{r}
 # Number of trees
+# Local variable for each sampled point
 random_points$var <- mapply(circle3_nb, random_points[, 1], random_points[, 2], MoreArgs = list(15, 9, 6))
 est_init_nb <- sum(random_points$var/p)
 cat("Number of trees:", nrow(trees), "\nEstimation of the number of trees:", est_init_nb)
@@ -115,7 +116,7 @@ Here, two methods are used: a naive one and an adapted one.
 ## First method to make bootstrap samples
 
 ```{r}
-# We only keep x and y in the dataframe
+# We only keep x, y and var in the dataframe
 random_points_1 <- random_points
 random_points_1$l <- NULL
 ```
@@ -189,22 +190,22 @@ est_boot1 <- function(df){
 }
 ```
 
-# Comparison between both methods
+# Comparison between the two methods
 
 ```{r}
 comparison2 <- function(df_init, B, small_step) {
   # df_init: initial data frame with 4 variables, just as random_points
-  # B: number of bootstrap replications each time
+  # B: maximum number of bootstrap replications for the last series
   # small_step: step to decide how many bootstrap series will be computed
   # large small_step => a few bootstrap series
   mean_vec1 <- c()
   mean_vec2 <- c()
   var_vec1 <- c()
   var_vec2 <- c()
-  b1 <- 100
+  b1 <- 100 # minimum number of bootstrap samples for one single series
   while (b1  < B) {
     ## First method
-    # We only keep x and y in the dataframe
+    # We only keep x, y and var in the dataframe
     df_init_1 <- df_init
     df_init_1$l <- NULL
     df_boot <- f_boot(df_init_1, b1)
@@ -220,10 +221,6 @@ comparison2 <- function(df_init, B, small_step) {
     var_vec1 <- append(var_vec1, var(est_boot_1))
     var_vec2 <- append(var_vec2, var(est_boot_2))
     
-    # tot_mean <- append(tot_mean, as.numeric(abs(mean(est_boot_2)-30942) <  abs(mean(est_boot_1)-30942))*2-1)
-    # 1: the second method is better
-    # tot_var <- append(tot_var, as.numeric(var(est_boot_2) <  var(est_boot_1))*2-1)
-    # 1: the second method is better
     b1 <- b1+small_step
   }
   return(list(mean_vec1, mean_vec2, var_vec1, var_vec2))
@@ -236,29 +233,40 @@ B_test <- 800
 
 ```{r}
 df_test <- random_points
+
+start.time <- Sys.time()
+
 res2 <- comparison2(df_test, B_test, 1)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
 ```
 
 ```{r}
 # We look at the mean of estimators
 data = as.data.frame(cbind(1:length(res2[[1]]), res2[[1]], res2[[2]]))
 
-p <- ggplot(data, aes(data[,1], data[,2] - data[,3]))
+p <- ggplot(data, aes(data[,1]+100, data[,2] - data[,3]))
 p + geom_point() +ggtitle("Comparison of the mean of estimators") + xlab("Number of bootstrap replications") + ylab("First method minus Second method")
 ```
+Figure 2. **Comparison of estimators obtained through the two methods depending on the number of bootstrap replications**. What is plotted is the gap between the result following the first method and the true value *minus* the gap between the result following the second method and the true value, as a function of the number of bootstrap replications. If it is positive, the second method gives estimators that are closer to the true value.
 
 ```{r}
+# We look at the variance of the estimators
 data_var = as.data.frame(cbind(1:length(res2[[1]]), res2[[3]], res2[[4]]))
 
-p <- ggplot(data_var, aes(data_var[,1], data_var[,2] - data_var[,3]))
+p <- ggplot(data_var, aes(data_var[,1]+100, data_var[,2] - data_var[,3]))
 p + geom_point() + ggtitle("Comparison of the variance of estimators") + xlab("Number of bootstrap replications") + ylab("First method minus Second method")
 
 # If it is positive, method 2 is better
 ```
+Figure 3. **Comparison of the variance of the estimators obtained through the two methods depending on the number of bootstrap replications**. What is plotted is the variance obtained by following the first method *minus* the variance obtained by following the second method, as a function of the number of bootstrap replications. If it is positive, the second method gives estimators that have smaller variances.
 
 ```{r}
 # To what extent does the second method improve variance?
-cat("If it is positive, it indicates that the second method improve reducing the variance.")
+cat("If it is positive, it indicates that the second method helps reducing the variance.")
 cat("\nWith all bootstrap samples:", mean(data_var[,2] - data_var[,3]))
 cat("\nWith the first half of bootstrap series (between 100 and ", floor((B_test+100)/2)," samples): ", mean(data_var[1:(floor((B_test+100)/2)-100),2] - data_var[1:(floor((B_test+100)/2)-100),3]), sep = "")
 cat("\nWith the last half of bootstrap series (between ", floor((B_test+100)/2)," and ", B_test, " samples): ", mean(data_var[(floor((B_test+100)/2)-100):(B_test-100),2] - data_var[(floor((B_test+100)/2)-100):(B_test-100),3]), sep = "")
