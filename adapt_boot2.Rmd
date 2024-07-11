@@ -147,6 +147,7 @@ f_boot2 <- function(df_sample, nboot){
   
   df_sample$step <- rep(0, nrow(df_sample))
   for (line in unique(df_sample$l)) {
+    print(line)
     df_sample$step <- as.numeric(df_sample$step == 0)*(row(df_sample[df_sample$l == line,])[,1]%%2) + as.numeric(df_sample$step != 0)*df_sample$step
   }
 
