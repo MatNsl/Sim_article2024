@@ -12,7 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
 library(tibble) # for add_column
-library(ggplot2)
+library(ggplot2) # To plot scatterplots
+library(dplyr) # for select
 ```
 
 The goal of this document is to create another bootstrap function that is adapted to the problem of continuous sampling with a grid. Indeed, we want a bootstrap function that takes into account the regularity of the sampling which is induced by the grid.
@@ -147,7 +148,6 @@ f_boot2 <- function(df_sample, nboot){
   
   df_sample$step <- rep(0, nrow(df_sample))
   for (line in unique(df_sample$l)) {
-    print(line)
     df_sample$step <- as.numeric(df_sample$step == 0)*(row(df_sample[df_sample$l == line,])[,1]%%2) + as.numeric(df_sample$step != 0)*df_sample$step
   }
 
@@ -160,13 +160,14 @@ f_boot2 <- function(df_sample, nboot){
   df_boot <- tibble(.rows = nrow(df_sample))
   for (b in 1:nboot) {
     nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE, prob = df_sample$prob)
-    df_sample$prob <- NULL
     sample_b <- df_sample[nb,]
     df_boot <- df_boot %>% add_column(new_col = sample_b)
     colnames(df_boot)[b] <- paste("ech", b, sep = "")
   }
-  return(do.call(data.frame, df_boot))
-  # Return a data frame with nboot samples of 2 variables and of size n
+  df_boot <- do.call(data.frame, df_boot)
+  df_boot <- df_boot %>% select(-contains("prob")) # Probabilities are useless now
+  return(df_boot)
+  # Return a data frame with nboot samples of 2 variables (x,y,local variable) and of size n
 }
 ```
 
@@ -191,8 +192,11 @@ est_boot1 <- function(df){
 # Comparison between both methods
 
 ```{r}
-comparison2 <- function(B) {
+comparison2 <- function(df_init, B, small_step) {
+  # df_init: initial data frame with 4 variables, just as random_points
   # B: number of bootstrap replications each time
+  # small_step: step to decide how many bootstrap series will be computed
+  # large small_step => a few bootstrap series
   mean_vec1 <- c()
   mean_vec2 <- c()
   var_vec1 <- c()
@@ -201,13 +205,13 @@ comparison2 <- function(B) {
   while (b1  < B) {
     ## First method
     # We only keep x and y in the dataframe
-    random_points_1 <- random_points
-    random_points_1$l <- NULL
-    df_boot <- f_boot(random_points_1, b1)
+    df_init_1 <- df_init
+    df_init_1$l <- NULL
+    df_boot <- f_boot(df_init_1, b1)
     est_boot_1 <- est_boot1(df_boot)
     
     ## Second method
-    df_boot2 <- f_boot2(random_points, b1)
+    df_boot2 <- f_boot2(df_init, b1)
     est_boot_2 <- est_boot1(df_boot2)
     
     mean_vec1 <- append(mean_vec1, abs(mean(est_boot_1)-30942))
@@ -220,69 +224,50 @@ comparison2 <- function(B) {
     # 1: the second method is better
     # tot_var <- append(tot_var, as.numeric(var(est_boot_2) <  var(est_boot_1))*2-1)
     # 1: the second method is better
-    b1 <- b1+10
+    b1 <- b1+small_step
   }
   return(list(mean_vec1, mean_vec2, var_vec1, var_vec2))
 }
 ```
 
 ```{r}
-res2 <- comparison2(500)
+B_test <- 800
 ```
 
 ```{r}
-res <- comparison2(500)
+df_test <- random_points
+res2 <- comparison2(df_test, B_test, 1)
 ```
 
 ```{r}
+# We look at the mean of estimators
 data = as.data.frame(cbind(1:length(res2[[1]]), res2[[1]], res2[[2]]))
-p1 <- ggplot(data, aes(data[,1], data[,2]))
-p2 <- ggplot(data, aes(data[,1], data[,3]))
-p1 + p2 + geom_point()
-p1 + geom_point
 
-# p <- ggplot(data, aes(data[,1], cbind(data[,2], data[,3])))
-# p + geom_point()
-
-p <- ggplot(data, aes(data[,1], data[,3] - data[,2]))
-p + geom_point()
+p <- ggplot(data, aes(data[,1], data[,2] - data[,3]))
+p + geom_point() +ggtitle("Comparison of the mean of estimators") + xlab("Number of bootstrap replications") + ylab("First method minus Second method")
 ```
 
 ```{r}
 data_var = as.data.frame(cbind(1:length(res2[[1]]), res2[[3]], res2[[4]]))
 
-p <- ggplot(data_var, aes(data_var[,1], data_var[,3] - data_var[,2]))
-p + geom_point()
+p <- ggplot(data_var, aes(data_var[,1], data_var[,2] - data_var[,3]))
+p + geom_point() + ggtitle("Comparison of the variance of estimators") + xlab("Number of bootstrap replications") + ylab("First method minus Second method")
+
+# If it is positive, method 2 is better
 ```
 
 ```{r}
-data_var = as.data.frame(cbind(1:length(res2[[1]]), res2[[3]], res2[[4]]))
+# To what extent does the second method improve variance?
+cat("If it is positive, it indicates that the second method improve reducing the variance.")
+cat("\nWith all bootstrap samples:", mean(data_var[,2] - data_var[,3]))
+cat("\nWith the first half of bootstrap series (between 100 and ", floor((B_test+100)/2)," samples): ", mean(data_var[1:(floor((B_test+100)/2)-100),2] - data_var[1:(floor((B_test+100)/2)-100),3]), sep = "")
+cat("\nWith the last half of bootstrap series (between ", floor((B_test+100)/2)," and ", B_test, " samples): ", mean(data_var[(floor((B_test+100)/2)-100):(B_test-100),2] - data_var[(floor((B_test+100)/2)-100):(B_test-100),3]), sep = "")
 
-p <- ggplot(data_var, aes(data_var[,1], data_var[,3] - data_var[,2]))
-p + geom_point()
+# Ex:
+# With all bootstrap samples: 13172.49
+# With the first half of bootstrap series (between 100 and 300): -3856.388
+# With the last half of bootstrap series (between 300 and 500 samples): 27526.69
 ```
-
-```{r}
-ggplot(x = 1:length(res[[1]]), y = res[[1]]) +
-  plot(x = 1:length(res[[1]]), y = res[[2]], col = "red")
-geom_point(
-    mapping = aes(y = group_mean), data = group_means_df,
-    colour = 'red', size = 3)
-
-```
-
-```{r}
-# If it is positive, the second method is the best to minimize the variance
-sum(res[[2]])
-# With ncomp = 100 and B = 500
-# 2 e.g.
-# 12
-
-# With ncomp = 1000 and B = 800
-# 56
-```
-
-# Conclusion
 
 
 
