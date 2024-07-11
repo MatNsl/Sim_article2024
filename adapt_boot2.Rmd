@@ -1,0 +1,287 @@
+---
+title: "Adapting bootstrap to our problem - Part 2"
+output: pdf_document
+date: "2024-07-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+library(ggplot2)
+```
+
+The goal of this document is to create another bootstrap function that is adapted to the problem of continuous sampling with a grid. Indeed, we want a bootstrap function that takes into account the regularity of the sampling which is induced by the grid.
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+# A first sample
+
+## Sampling in one 10th of the small squares of a grid
+
+```{r}
+### Randomizing the positions of the numbers (from 1 to 10) 
+# used to identify small squares in the grid
+random10 <- sample(1:10)
+i <- sample(1:10, 1) # choice of the rank of the identifier we want
+nb <- random10[i] # the identifier thus chosen
+```
+
+```{r}
+# Dimension of a small square (length of one side of the square)
+# We assume that c_dim is a divisor of 1000
+c_dim <- 10
+```
+
+```{r}
+# Now, we sample at random following the grid
+random_points <- data.frame(x = numeric(), y = numeric(), l = numeric())
+
+# column l in addition
+for (l in 0:((1000/c_dim)-1)) {
+  if (l==0){
+    x_init <- i*c_dim
+  }else if ((3*l+i)*c_dim < (10)*c_dim){
+    x_init <- (3*l+i)*c_dim
+  }else{
+    x_init <- (((3*l+i)*c_dim)%%(c_dim*10))
+  }
+  k <- 0
+  while (x_init + 10*c_dim*k < 1000) {
+    a <- runif(1, x_init + 10*c_dim*k, x_init + 10*c_dim*k + c_dim)
+    b <- runif(1, l*c_dim, (l+1)*c_dim)
+    random_points <- rbind(random_points, list(a,b, l))
+    k <- k+1
+  }
+}
+colnames(random_points) <- list("x", "y", "l")
+```
+
+```{r}
+plot(x = random_points$x, y = random_points$y, xlab = "", ylab = "", main = "Random points", panel.first=grid(), las = 1)
+```
+Figure 1. **Points sampled following a grid over the whole territory**.
+
+```{r}
+rm(a,b,l,x_init,k)
+```
+
+```{r}
+### Values available after sampling
+
+# Sample size
+n <- nrow(random_points)
+
+# Marginal density: density of the uniform distribution over 1:1000
+# Which leads us to the inclusion density function
+p <- sum(rep((1/1000)*(1/1000), n))
+```
+
+## Estimations based on the sample previously made
+
+```{r}
+# Number of trees
+random_points$var <- mapply(circle3_nb, random_points[, 1], random_points[, 2], MoreArgs = list(15, 9, 6))
+est_init_nb <- sum(random_points$var/p)
+cat("Number of trees:", nrow(trees), "\nEstimation of the number of trees:", est_init_nb)
+
+# Ex:
+# Number of trees: 30942 
+# Estimation of the number of trees: 31066.18
+
+# Number of trees: 30942 
+# Estimation of the number of trees: 30489.25
+```
+
+# Bootstrap
+
+Here, two methods are used: a naive one and an adapted one.
+
+## First method to make bootstrap samples
+
+```{r}
+# We only keep x and y in the dataframe
+random_points_1 <- random_points
+random_points_1$l <- NULL
+```
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
+  
+  df_boot <- tibble(.rows = nrow(df_sample))
+  for (b in 1:B) {
+    nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE)
+    sample_b <- df_sample[nb,]
+    df_boot <- df_boot %>% add_column(new_col = sample_b)
+    colnames(df_boot)[b] <- paste("ech", b, sep = "")
+  }
+  return(do.call(data.frame, df_boot))
+  # Return a data frame with B samples of 2 variables and of size n
+}
+```
+
+## Second method to make bootstrap samples
+
+```{r}
+f_boot2 <- function(df_sample, nboot){
+  # df_sample: original sample (4 variables: x,y,l,var)
+  # nboot: number of bootstrap samples made thanks to df_sample
+  
+  odd_even1 <- sample(1:2, 1) # Randomly put more weight on even or odd lines
+  odd_even2 <- sample(1:2, 1) # The same for "columns"
+  
+  df_sample$step <- rep(0, nrow(df_sample))
+  for (line in unique(df_sample$l)) {
+    df_sample$step <- as.numeric(df_sample$step == 0)*(row(df_sample[df_sample$l == line,])[,1]%%2) + as.numeric(df_sample$step != 0)*df_sample$step
+  }
+
+  df_sample$prob <- (((df_sample$l+odd_even1)%%2 + (df_sample$step+odd_even2)%%2) == 0)*(1/4) +
+    (((df_sample$l+odd_even1)%%2 + (df_sample$step+odd_even2)%%2) == 1)*(1/2) +
+    (((df_sample$l+odd_even1)%%2 + (df_sample$step+odd_even2)%%2) == 2)*(3/4)
+  df_sample$l <- NULL
+  df_sample$step <- NULL
+  
+  df_boot <- tibble(.rows = nrow(df_sample))
+  for (b in 1:nboot) {
+    nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE, prob = df_sample$prob)
+    df_sample$prob <- NULL
+    sample_b <- df_sample[nb,]
+    df_boot <- df_boot %>% add_column(new_col = sample_b)
+    colnames(df_boot)[b] <- paste("ech", b, sep = "")
+  }
+  return(do.call(data.frame, df_boot))
+  # Return a data frame with nboot samples of 2 variables and of size n
+}
+```
+
+## Number of trees
+
+```{r}
+# Making of one estimation for each sample made by the bootstrap method
+est_boot1 <- function(df){
+  # df: dataframe with 3*B columns and n rows
+  
+  nboot <- length(df)/3
+  vec_est <- c()
+  for (c in 1:nboot) {
+    vec_est <- append(vec_est, sum(df[,3*c]/p))
+  }
+  vec_est <- sort(vec_est)
+  return(vec_est)
+  # Vector with one estimation for each sample
+}
+```
+
+# Comparison between both methods
+
+```{r}
+comparison2 <- function(B) {
+  # B: number of bootstrap replications each time
+  mean_vec1 <- c()
+  mean_vec2 <- c()
+  var_vec1 <- c()
+  var_vec2 <- c()
+  b1 <- 100
+  while (b1  < B) {
+    ## First method
+    # We only keep x and y in the dataframe
+    random_points_1 <- random_points
+    random_points_1$l <- NULL
+    df_boot <- f_boot(random_points_1, b1)
+    est_boot_1 <- est_boot1(df_boot)
+    
+    ## Second method
+    df_boot2 <- f_boot2(random_points, b1)
+    est_boot_2 <- est_boot1(df_boot2)
+    
+    mean_vec1 <- append(mean_vec1, abs(mean(est_boot_1)-30942))
+    mean_vec2 <- append(mean_vec2, abs(mean(est_boot_2)-30942))
+    
+    var_vec1 <- append(var_vec1, var(est_boot_1))
+    var_vec2 <- append(var_vec2, var(est_boot_2))
+    
+    # tot_mean <- append(tot_mean, as.numeric(abs(mean(est_boot_2)-30942) <  abs(mean(est_boot_1)-30942))*2-1)
+    # 1: the second method is better
+    # tot_var <- append(tot_var, as.numeric(var(est_boot_2) <  var(est_boot_1))*2-1)
+    # 1: the second method is better
+    b1 <- b1+10
+  }
+  return(list(mean_vec1, mean_vec2, var_vec1, var_vec2))
+}
+```
+
+```{r}
+res2 <- comparison2(500)
+```
+
+```{r}
+res <- comparison2(500)
+```
+
+```{r}
+data = as.data.frame(cbind(1:length(res2[[1]]), res2[[1]], res2[[2]]))
+p1 <- ggplot(data, aes(data[,1], data[,2]))
+p2 <- ggplot(data, aes(data[,1], data[,3]))
+p1 + p2 + geom_point()
+p1 + geom_point
+
+# p <- ggplot(data, aes(data[,1], cbind(data[,2], data[,3])))
+# p + geom_point()
+
+p <- ggplot(data, aes(data[,1], data[,3] - data[,2]))
+p + geom_point()
+```
+
+```{r}
+data_var = as.data.frame(cbind(1:length(res2[[1]]), res2[[3]], res2[[4]]))
+
+p <- ggplot(data_var, aes(data_var[,1], data_var[,3] - data_var[,2]))
+p + geom_point()
+```
+
+```{r}
+data_var = as.data.frame(cbind(1:length(res2[[1]]), res2[[3]], res2[[4]]))
+
+p <- ggplot(data_var, aes(data_var[,1], data_var[,3] - data_var[,2]))
+p + geom_point()
+```
+
+```{r}
+ggplot(x = 1:length(res[[1]]), y = res[[1]]) +
+  plot(x = 1:length(res[[1]]), y = res[[2]], col = "red")
+geom_point(
+    mapping = aes(y = group_mean), data = group_means_df,
+    colour = 'red', size = 3)
+
+```
+
+```{r}
+# If it is positive, the second method is the best to minimize the variance
+sum(res[[2]])
+# With ncomp = 100 and B = 500
+# 2 e.g.
+# 12
+
+# With ncomp = 1000 and B = 800
+# 56
+```
+
+# Conclusion
+
+
+
