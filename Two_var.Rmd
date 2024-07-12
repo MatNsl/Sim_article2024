@@ -1,0 +1,113 @@
+---
+title: "Making sure the variances converge"
+output: html_document
+date: "2024-07-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
+# Sample size
+n <- 1000
+```
+
+# Monte Carlo alone
+
+10 000 Monte Carlo iterations would be fine
+
+```{r}
+
+```
+
+
+# Bootstrap for each Monte Carlo iteration
+
+1 000 Monte Carlo iterations should be fine
+400 bootstrap iterations for each would be fine (200 to begin with if it is too much)
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
+  
+  df_boot <- tibble(.rows = nrow(df_sample))
+  for (b in 1:B) {
+    nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE)
+    sample_b <- df_sample[nb,]
+    df_boot <- df_boot %>% add_column(new_col = sample_b)
+    colnames(df_boot)[b] <- paste("ech", b, sep = "")
+  }
+  return(do.call(data.frame, df_boot))
+  # Return a data frame with B samples of 2 variables and of size n
+}
+```
+
+```{r}
+# Making of one estimation for each sample made by the bootstrap method
+est_boot <- function(df, p){
+  # df: dataframe with 3*B columns and n rows
+  
+  nboot <- length(df)/3
+  vec_est <- c()
+  for (c in 1:nboot) {
+    vec_est <- append(vec_est, sum(df[,3*c]/p))
+  }
+  vec_est <- sort(vec_est)
+  return(vec_est)
+  # Vector with one estimation for each sample
+}
+```
+
+```{r}
+### Function to automate Monte Carlo method
+
+MC_boot <- function(n, B1, B2, f){
+  # n: sample size; B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap;
+  # f: function to consider (2 arguments)
+  # Argument grid? (change n then)
+  p <- sum(rep((1/1000)*(1/1000), n))
+  
+  est_MC <- c()
+  mean_est_boot <- c()
+  var_est_boot <- c()
+  
+  for (b in 2:B1) {
+    # One MC iteration at a time
+    random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+    random_points$var <- mapply(f, random_points[, 1], random_points[, 2])
+    a <- sum(random_points$var/p)
+    est_MC <- append(est_MC, a)
+    
+    # Bootstrap iterations
+    df_boot <- f_boot(random_points, B2)
+    est_boot_val <- est_boot(df_boot, p)
+    mean_est_boot <- append(mean_est_boot, mean(est_boot_val))
+    var_est_boot <- append(var_est_boot, var(est_boot_val))
+  }
+  return(c(mean(est_MC), var(est_MC), mean(var_est_boot)))
+  # Estimated value of the total, Monte-Carlo variance, mean of the bootstrap variance
+}
+```
+
+
+
