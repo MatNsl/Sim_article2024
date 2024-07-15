@@ -39,6 +39,7 @@ n <- 1000
 
 ```{r}
 ### Function to automate Monte Carlo method, to produce a variance
+
 MonteCarlo <- function(n, B, f){
   # n: sample size; 
   # B: number of iterations for MC; 
@@ -74,6 +75,8 @@ time.taken
 
 ```{r}
 cat("Monte Carlo variance:", res1)
+# Ex:
+# Monte Carlo variance: 2789037
 ```
 
 # Bootstrap for each Monte Carlo iteration
@@ -123,23 +126,18 @@ MC_boot <- function(n, B1, B2, f){
   # n: sample size; B1: number of iterations for MC;
   # B2: number of iterations for bootstrap;
   # f: function to consider (2 arguments)
+  
   p <- sum(rep((1/1000)*(1/1000), n))
-  
-  est_MC <- c()
-  mean_est_boot <- c()
   var_est_boot <- c()
-  
   for (b in 2:B1) {
     # One MC iteration at a time
     random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
     random_points$var <- mapply(f, random_points[, 1], random_points[, 2])
     a <- sum(random_points$var/p)
-    est_MC <- append(est_MC, a)
     
     # Bootstrap iterations
     df_boot <- f_boot(random_points, B2)
     est_boot_val <- est_boot(df_boot, p)
-    mean_est_boot <- append(mean_est_boot, mean(est_boot_val))
     var_est_boot <- append(var_est_boot, var(est_boot_val))
   }
   return(mean(var_est_boot))
@@ -161,12 +159,16 @@ time.taken
 
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2)
+# Ex:
+# Mean of the variance of bootstrap samples: 2845120
 ```
 
 # Conclusion
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1,res2)-min(res1,res2))/min(res1,res2), "%", sep = "")
+# Ex:
+# We get a difference of: 2.01084%
 ```
 
 
