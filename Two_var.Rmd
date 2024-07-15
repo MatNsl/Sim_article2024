@@ -35,29 +35,27 @@ n <- 1000
 
 # Monte Carlo alone
 
-10 000 Monte Carlo iterations would be fine
+10 000 Monte Carlo iterations are appropriated.
 
 ```{r}
-### Function to automate Monte Carlo method
-
+### Function to automate Monte Carlo method, to produce a variance
 MonteCarlo <- function(n, B, f){
-  # n: sample size; B: number of iterations for MC; 
+  # n: sample size; 
+  # B: number of iterations for MC; 
   # f: function to consider (with 2 variables, x and y)
-  p <- sum(rep((1/1000)*(1/1000), n))
   
-  # 1st step: generating n samples
-  # series_MC <- data.frame(x.1 = runif(n, 0, 1000), y.1 = runif(n, 0, 1000))
+  p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
   col_names <- c()
-  
   series_MC <- data.frame(rep(0,n))
-  est_MC <- c()
-  for (b in 2:B) {
+  est_MC <- c() # Vector containing all estimations
+  for (b in 2:B) { # All in one "for" loop
     x <- paste("x", b, sep = "")
     y <- paste("y", b, sep = "")
     z <- paste("est", b, sep = "")
     # Uniform sampling over the whole territory
     a1 <- runif(n, 0, 1000)
     a2 <- runif(n, 0, 1000)
+    # Variable of interest derived from the sample
     a <- mapply(f, a1, a2)
     est_MC <- append(est_MC, sum(a/p))
     series_MC <- series_MC %>% add_column(x = a1, y = a2, z = a)
@@ -66,15 +64,15 @@ MonteCarlo <- function(n, B, f){
   series_MC <- series_MC[,-1]
   colnames(series_MC) <- col_names
   
-  return(c(mean(est_MC), var(est_MC)))
-  # Estimated value and Monte-Carlo variance
+  return(var(est_MC))
+  # Monte-Carlo variance
 }
 ```
   
 ```{r}
 start.time <- Sys.time()
 
-MC1 <- MonteCarlo(n, 10000, circle_nb)
+res1 <- MonteCarlo(n, 10000, circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -84,19 +82,17 @@ time.taken
 ```
 
 ```{r}
-cat("Monte Carlo variance:", MC1[2])
+cat("Monte Carlo variance:", res1)
 ```
-
-
 
 # Bootstrap for each Monte Carlo iteration
 
-1 000 Monte Carlo iterations should be fine
-400 bootstrap iterations for each would be fine (200 to begin with if it is too much)
+1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
 
 ```{r}
 f_boot <- function(df_sample, B){
-  # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
+  # df_sample: original sample; 
+  # B: number of bootstrap samples made thanks to df_sample
   
   df_boot <- tibble(.rows = (nrow(df_sample)-1))
   for (b in 1:B) {
@@ -116,10 +112,12 @@ f_boot <- function(df_sample, B){
 est_boot <- function(df, p){
   # df: dataframe with 3*B columns and n rows
   
-  nboot <- length(df)/3
+  n <- nrow(df) + 1 # sample size of the initial sample
+  nboot <- length(df)/3 # number of bootstrap samples
   vec_est <- c()
   for (c in 1:nboot) {
-    vec_est <- append(vec_est, sum(df[,3*c]/p))
+    vec_est <- append(vec_est, (n/(n-1))*sum(df[,3*c]/p))
+    # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
   vec_est <- sort(vec_est)
   return(vec_est)
@@ -128,13 +126,12 @@ est_boot <- function(df, p){
 ```
 
 ```{r}
-### Function to automate Monte Carlo method
+### Function to automate Monte Carlo + bootstrap method
 
 MC_boot <- function(n, B1, B2, f){
   # n: sample size; B1: number of iterations for MC;
   # B2: number of iterations for bootstrap;
   # f: function to consider (2 arguments)
-  # Argument grid? (change n then)
   p <- sum(rep((1/1000)*(1/1000), n))
   
   est_MC <- c()
@@ -154,15 +151,15 @@ MC_boot <- function(n, B1, B2, f){
     mean_est_boot <- append(mean_est_boot, mean(est_boot_val))
     var_est_boot <- append(var_est_boot, var(est_boot_val))
   }
-  return(c(mean(est_MC), var(est_MC), mean(var_est_boot)))
-  # Estimated value of the total, Monte-Carlo variance, mean of the bootstrap variance
+  return(mean(var_est_boot))
+  # Mean of the bootstrap variance
 }
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_nb)
+res2 <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -172,7 +169,13 @@ time.taken
 ```
 
 ```{r}
-cat("Mean of the variance of bootstrap samples:", res[3])
+cat("Mean of the variance of bootstrap samples:", res2)
+```
+
+# Conclusion
+
+```{r}
+cat("We get a difference of: ", 100*(max(res1,res2)-min(res1,res2))/min(res1,res2), "%", sep = "")
 ```
 
 

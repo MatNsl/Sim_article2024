@@ -779,5 +779,18 @@ library(beepr)
 beep()
 ```
 
+# Variance
+
+```{r}
+# Unbiased variance
+
+# Test
+test <- c(1,2,3,5)
+var(test) # 2.916667
+
+varbis <- function(x){
+  
+}
+```
 
 
