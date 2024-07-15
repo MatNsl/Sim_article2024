@@ -70,7 +70,6 @@ MonteCarlo <- function(n, B, f){
   # Estimated value and Monte-Carlo variance
 }
 ```
-rho_MC <- tibble(.rows = n)
   
 ```{r}
 start.time <- Sys.time()
@@ -82,9 +81,12 @@ end.time <- Sys.time()
 time.taken <- end.time - start.time
 
 time.taken
-
-MC1
 ```
+
+```{r}
+cat("Monte Carlo variance:", MC1[2])
+```
+
 
 
 # Bootstrap for each Monte Carlo iteration
@@ -96,9 +98,10 @@ MC1
 f_boot <- function(df_sample, B){
   # df_sample: original sample; B: number of bootstrap samples made thanks to df_sample
   
-  df_boot <- tibble(.rows = nrow(df_sample))
+  df_boot <- tibble(.rows = (nrow(df_sample)-1))
   for (b in 1:B) {
-    nb <- sample(1:nrow(df_sample), nrow(df_sample), replace = TRUE)
+    nb <- sample(1:(nrow(df_sample)-1), nrow(df_sample), replace = TRUE)
+    # (n-1) points at random
     sample_b <- df_sample[nb,]
     df_boot <- df_boot %>% add_column(new_col = sample_b)
     colnames(df_boot)[b] <- paste("ech", b, sep = "")
@@ -159,7 +162,7 @@ MC_boot <- function(n, B1, B2, f){
 ```{r}
 start.time <- Sys.time()
 
-res <- MC_boot(n = 100, B1 = 1000, B2 = 400, f = circle_nb)
+res <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -169,7 +172,7 @@ time.taken
 ```
 
 ```{r}
-cat("Mean of Monte-Carlo samples:", res[1], "\nMonte-Carlo variance:", res[2], "\nMean of the variance of bootstrap samples:", res[3])
+cat("Mean of the variance of bootstrap samples:", res[3])
 ```
 
 
