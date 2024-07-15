@@ -45,24 +45,15 @@ MonteCarlo <- function(n, B, f){
   # f: function to consider (with 2 variables, x and y)
   
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
-  col_names <- c()
-  series_MC <- data.frame(rep(0,n))
   est_MC <- c() # Vector containing all estimations
   for (b in 2:B) { # All in one "for" loop
-    x <- paste("x", b, sep = "")
-    y <- paste("y", b, sep = "")
-    z <- paste("est", b, sep = "")
     # Uniform sampling over the whole territory
     a1 <- runif(n, 0, 1000)
     a2 <- runif(n, 0, 1000)
     # Variable of interest derived from the sample
     a <- mapply(f, a1, a2)
     est_MC <- append(est_MC, sum(a/p))
-    series_MC <- series_MC %>% add_column(x = a1, y = a2, z = a)
-    col_names <- append(col_names, c(x, y, z))
   }
-  series_MC <- series_MC[,-1]
-  colnames(series_MC) <- col_names
   
   return(var(est_MC))
   # Monte-Carlo variance
@@ -96,7 +87,7 @@ f_boot <- function(df_sample, B){
   
   df_boot <- tibble(.rows = (nrow(df_sample)-1))
   for (b in 1:B) {
-    nb <- sample(1:(nrow(df_sample)-1), nrow(df_sample), replace = TRUE)
+    nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
     # (n-1) points at random
     sample_b <- df_sample[nb,]
     df_boot <- df_boot %>% add_column(new_col = sample_b)
