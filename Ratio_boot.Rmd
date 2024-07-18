@@ -1,0 +1,33 @@
+---
+title: "Bootstrap method with estimated ratios"
+output: pdf_document
+date: "2024-07-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
+# Sample size
+n <- 1000
+```
+
