@@ -191,7 +191,7 @@ time.taken
 ```{r}
 cat("Monte Carlo variance:", res1_vol)
 # Ex:
-# Monte Carlo variance: 
+# Monte Carlo variance: 98332.87
 ```
 
 ```{r}
@@ -209,13 +209,13 @@ time.taken
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_vol)
 # Ex:
-# Mean of the variance of bootstrap samples: 
+# Mean of the variance of bootstrap samples: 98594.44
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_vol,res2_vol)-min(res1_vol,res2_vol))/min(res1_vol,res2_vol), "%", sep = "")
 # Ex:
-# We get a difference of:
+# We get a difference of: 0.2660091%
 ```
 
 
