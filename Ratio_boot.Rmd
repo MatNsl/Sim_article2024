@@ -29,5 +29,48 @@ source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ```{r}
 # Sample size
 n <- 1000
+
+# Inclusion density
+p <- sum(rep((1/1000)*(1/1000), n))
 ```
 
+# Ratio volume/number of trees
+
+```{r}
+# True ratio
+cat("True ratio \"total volume over number of trees\":", sum(trees$v)/nrow(trees))
+```
+
+```{r}
+random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+```
+
+```{r}
+# An estimation of the ratio
+a1 <- mapply(circle_nb, random_points[, 1], random_points[, 2])
+a1 <- sum(a1/p)
+a2 <- mapply(circle_vol, random_points[, 1], random_points[, 2])
+a2 <- sum(a2/p)
+est_ratio <- a2/a1
+# 0.1761545 e.g.
+```
+
+```{r}
+# A second estimation of the ratio with 3 categories
+b1 <- mapply(circle_nb_3cats, random_points[, 1], random_points[, 2])
+b11 <- sum(b1[1,]/p)
+b12 <- sum(b1[2,]/p)
+b13 <- sum(b1[3,]/p)
+b2 <- mapply(circle_vol_3cats, random_points[, 1], random_points[, 2])
+b21 <- sum(b2[1,]/p)
+b22 <- sum(b2[2,]/p)
+b23 <- sum(b2[3,]/p)
+
+est_vol <- b11*b21/a1 + b12*b22/a1 + b13*b23/a1
+```
+
+```{r}
+# Underlying model?
+reg <- lm(v ~ d130, data = trees)
+cat("R^2:", summary(reg)$r.squared)
+```
