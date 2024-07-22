@@ -142,7 +142,7 @@ time.taken
 
 ```{r}
 cat("Monte Carlo variance:", res1_nb)
-# Examples:
+# Example:
 # Monte Carlo variance: 2717279
 ```
 
@@ -160,13 +160,13 @@ time.taken
 
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_nb)
-# Examples:
+# Example:
 # Mean of the variance of bootstrap samples: 2684541
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_nb,res2_nb)-min(res1_nb,res2_nb))/min(res1_nb,res2_nb), "%", sep = "")
-# Examples:
+# Example:
 # We get a difference of: 1.21952%
 ```
 
