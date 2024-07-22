@@ -143,7 +143,7 @@ time.taken
 ```{r}
 cat("Monte Carlo variance:", res1_nb)
 # Examples:
-# Monte Carlo variance: 
+# Monte Carlo variance: 2717279
 ```
 
 ```{r}
@@ -161,13 +161,13 @@ time.taken
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_nb)
 # Examples:
-# Mean of the variance of bootstrap samples:
+# Mean of the variance of bootstrap samples: 2684541
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_nb,res2_nb)-min(res1_nb,res2_nb))/min(res1_nb,res2_nb), "%", sep = "")
 # Examples:
-# We get a difference of: 
+# We get a difference of: 1.21952%
 ```
 
 # Second example: volume of the forest
@@ -187,7 +187,7 @@ time.taken
 ```{r}
 cat("Monte Carlo variance:", res1_vol)
 # Ex:
-# Monte Carlo variance: 
+# Monte Carlo variance: 84693.99
 ```
 
 ```{r}
@@ -205,13 +205,13 @@ time.taken
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_vol)
 # Ex:
-# Mean of the variance of bootstrap samples: 
+# Mean of the variance of bootstrap samples: 83681.51
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_vol,res2_vol)-min(res1_vol,res2_vol))/min(res1_vol,res2_vol), "%", sep = "")
 # Ex:
-# We get a difference of: 
+# We get a difference of: 1.209916%
 ```
 
 
