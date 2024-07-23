@@ -28,6 +28,50 @@ circle_vol <- function(x1, x2, R=5){
   # list_trees: identifiers of targeted trees; local_var: local variable based on the volume of trees
 }
 
+circle_nb_size <- function(x1, x2, R=5, bounds = c(23.5, 70.5)){
+  # 2 coordinates (x1, x2) and a radius (R)
+  # bounds: to target a category of trees based on circumference
+  
+  # Preliminary: inclusion area
+  source("~/work/Sim_article2024/Useful_functions/Inc_area.R")
+  
+  # From circumference to diameter (d130)
+  d <- bounds/pi
+  
+  list_trees <- trees[(x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2,] 
+  # list_trees1 <- ifelse(nrow(list_trees) != 0, list_trees[(list_trees$d130 > d[3]),], list_trees) # List with the biggest trees
+  
+  list_trees_size <- list_trees[(list_trees$d130 > d[1]) & (list_trees$d130 < d[2]),] # smallest trees
+  
+  inc_areaR <- inc_area(c(x1, x2),0,0,1000,1000,R)
+  local_var <- sum(nrow(list_trees_size)/inc_areaR) # Local variable for the specific category of trees
+  
+  return(local_var)
+  # local_var: local variable based on the number of trees
+}
+
+circle_vol_size <- function(x1, x2, R=5, bounds = c(23.5, 70.5)){
+  # 2 coordinates (x1, x2) and a radius (R)
+  # bounds: to target a category of trees based on circumference
+  
+  # Preliminary: inclusion area
+  source("~/work/Sim_article2024/Useful_functions/Inc_area.R")
+  
+  # From circumference to diameter (d130)
+  d <- bounds/pi
+  
+  list_trees <- trees[(x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2,] 
+  # list_trees1 <- ifelse(nrow(list_trees) != 0, list_trees[(list_trees$d130 > d[3]),], list_trees) # List with the biggest trees
+  
+  list_trees_size <- list_trees[(list_trees$d130 > d[1]) & (list_trees$d130 < d[2]),] # smallest trees
+  
+  inc_areaR <- inc_area(c(x1, x2),0,0,1000,1000,R)
+  local_var <- sum(list_trees_size$v/inc_areaR) # Local variable for the specific category of trees
+  
+  return(local_var)
+  # local_var: local variable based on the number of trees
+}
+
 ## Function to produce 3 local variables for the volume of trees in 3 categories
 circle_nb_3cats <- function(x1, x2, R=5, bounds = c(0, 70.5, 117.5)){
   # 2 coordinates (x1, x2) and a radius (R)

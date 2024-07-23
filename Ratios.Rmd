@@ -1,0 +1,188 @@
+---
+title: "Ratios"
+output: pdf_document
+date: "2024-07-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
+# Sample size
+n <- 1000
+
+# Inclusion density
+p <- sum(rep((1/1000)*(1/1000), n))
+```
+
+```{r}
+random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+```
+
+# Bootstrap for each Monte Carlo iteration
+
+1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; 
+  # B: number of bootstrap samples made thanks to df_sample
+  
+  df_boot <- tibble(.rows = (nrow(df_sample)-1))
+  for (b in 1:B) {
+    nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
+    # (n-1) points at random
+    sample_b <- df_sample[nb,]
+    df_boot <- df_boot %>% add_column(new_col = sample_b)
+    colnames(df_boot)[b] <- paste("ech", b, sep = "")
+  }
+  return(do.call(data.frame, df_boot))
+  # Return a data frame with B samples of 2 (or more) variables and of size n
+}
+```
+
+```{r}
+# Making of one estimation for each sample made by the bootstrap method
+est_boot <- function(df, p){
+  # df: dataframe with 4*B columns and n rows
+  
+  n <- nrow(df) + 1 # sample size of the initial sample
+  nboot <- length(df)/4 # number of bootstrap samples
+  vec_est1 <- c()
+  vec_est2 <- c()
+  for (c in 1:nboot) {
+    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3*c]/p))
+    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,4*c]/p))
+    # (n/(n-1)) is the correction needed since we choose only (n-1) points
+  }
+  # vec_est1 <- sort(vec_est1)
+  # vec_est2 <- sort(vec_est2)
+  vec_est <- data.frame(est1 = vec_est1, est2 = vec_est2)
+  return(vec_est)
+  # Vector with one estimation for each sample
+}
+```
+
+```{r}
+### Function to automate Monte Carlo + bootstrap method
+
+MC_boot <- function(n, B1, B2, f1, f2){
+  # n: sample size; B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap;
+  # f1: function to consider (2 arguments) on the numerator
+  # f2: function to consider (2 arguments) on the denominator
+  
+  p <- sum(rep((1/1000)*(1/1000), n))
+  var_est_boot <- c()
+  for (b in 2:B1) {
+    # One MC iteration at a time
+    random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+    random_points$var1 <- mapply(f1, random_points[, 1], random_points[, 2])
+    random_points$var2 <- mapply(f2, random_points[, 1], random_points[, 2])
+    # a1 <- sum(random_points$var1/p)
+    
+    # Bootstrap iterations
+    df_boot <- f_boot(random_points, B2)
+    # est_boot_val <- mapply(est_boot, df_boot[, 1], df_boot[, 2])
+    est_boot_val <- est_boot(df_boot, p)
+    est_boot_ratio <- est_boot_val[,1]/est_boot_val[,2]
+    var_est_boot <- append(var_est_boot, var(est_boot_ratio))
+  }
+  return(mean(var_est_boot))
+  # Mean of the bootstrap variance
+}
+```
+
+# Global estimations with one circle
+
+```{r}
+tot_nb <- mapply(circle_nb, random_points[, 1], random_points[, 2])
+tot_vol <- mapply(circle_vol, random_points[, 1], random_points[, 2])
+```
+
+```{r}
+tot_nb_vol <- data.frame(nb = tot_nb, vol = tot_vol)
+a1 <- sum(tot_nb/p)
+a2 <- sum(tot_vol/p)
+est_ratio <- a2/a1
+```
+
+```{r}
+cat("True ratio \"total volume over number of trees\":", sum(trees$v)/nrow(trees), "\nEstimation of this ratio:", est_ratio)
+# Ex:
+# True ratio "total volume over number of trees": 0.1749312 
+# Estimation of this ratio: 0.1693595
+```
+
+```{r}
+start.time <- Sys.time()
+
+res_ratio1 <- MC_boot(n, B1 = 1000, B2 = 400, f1 = circle_nb, f2 = circle_vol)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+cat("Mean of the variance of bootstrap samples:", res_ratio1)
+# Ex:
+# Mean of the variance of bootstrap samples: 
+```
+
+# Various circumferences
+
+```{r}
+y1 <- mapply(circle_vol_size, random_points[, 1], random_points[, 2])
+Y1 <- sum(y1/p)
+```
+
+```{r}
+cat("True ratio \"volume of the smallest over total volume\":", sum(trees[(trees$d130 > 23.5/pi) & (trees$d130 < 70.5/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y1/a2)
+```
+
+```{r}
+y2 <- mapply(circle_vol_size, random_points[, 1], random_points[, 2], MoreArgs = list(5, c(70.5, 117.5)))
+Y2 <- sum(y2/p)
+```
+
+```{r}
+cat("True ratio \"volume of the medium over total volume\":", sum(trees[(trees$d130 > 70.5/pi) & (trees$d130 < 117.5/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y2/a2)
+```
+
+```{r}
+y3 <- mapply(circle_vol_size, random_points[, 1], random_points[, 2], MoreArgs = list(5, c(117.5, 500)))
+Y3 <- sum(y3/p)
+```
+
+```{r}
+cat("True ratio \"volume of the biggest over total volume\":", sum(trees[(trees$d130 > 117.5/pi) & (trees$d130 < 500/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y3/a2)
+```
+
+```{r}
+
+```
+
+
+
