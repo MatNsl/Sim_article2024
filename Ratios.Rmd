@@ -1,5 +1,5 @@
 ---
-title: "Ratios"
+title: "Various ratios and their estimations"
 output: pdf_document
 date: "2024-07-23"
 ---
@@ -178,10 +178,6 @@ Y3 <- sum(y3/p)
 
 ```{r}
 cat("True ratio \"volume of the biggest over total volume\":", sum(trees[(trees$d130 > 117.5/pi) & (trees$d130 < 500/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y3/a2)
-```
-
-```{r}
-
 ```
 
 
