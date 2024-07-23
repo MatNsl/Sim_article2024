@@ -98,11 +98,9 @@ MC_boot <- function(n, B1, B2, f1, f2){
     random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
     random_points$var1 <- mapply(f1, random_points[, 1], random_points[, 2])
     random_points$var2 <- mapply(f2, random_points[, 1], random_points[, 2])
-    # a1 <- sum(random_points$var1/p)
     
     # Bootstrap iterations
     df_boot <- f_boot(random_points, B2)
-    # est_boot_val <- mapply(est_boot, df_boot[, 1], df_boot[, 2])
     est_boot_val <- est_boot(df_boot, p)
     est_boot_ratio <- est_boot_val[,1]/est_boot_val[,2]
     var_est_boot <- append(var_est_boot, var(est_boot_ratio))
@@ -130,13 +128,13 @@ est_ratio <- a2/a1
 cat("True ratio \"total volume over number of trees\":", sum(trees$v)/nrow(trees), "\nEstimation of this ratio:", est_ratio)
 # Ex:
 # True ratio "total volume over number of trees": 0.1749312 
-# Estimation of this ratio: 0.1693595
+# Estimation of this ratio: 0.1714633
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res_ratio1 <- MC_boot(n, B1 = 1000, B2 = 400, f1 = circle_nb, f2 = circle_vol)
+res_ratio1 <- MC_boot(n, B1 = 1000, B2 = 400, f1 = circle_vol, f2 = circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -148,7 +146,7 @@ time.taken
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res_ratio1)
 # Ex:
-# Mean of the variance of bootstrap samples: 
+# Mean of the variance of bootstrap samples: 2190764978
 ```
 
 # Various circumferences
@@ -160,6 +158,25 @@ Y1 <- sum(y1/p)
 
 ```{r}
 cat("True ratio \"volume of the smallest over total volume\":", sum(trees[(trees$d130 > 23.5/pi) & (trees$d130 < 70.5/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y1/a2)
+# Ex:
+# True ratio "volume of the smallest over total volume": 0.5741108
+# Estimation of this ratio: 0.5846677
+```
+
+```{r}
+start.time <- Sys.time()
+
+res_ratio2 <- MC_boot(n, B1 = 1000, B2 = 400, f1 = circle_vol_size, f2 = circle_vol)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+cat("Mean of the variance of bootstrap samples:", res_ratio2)
 ```
 
 ```{r}
@@ -169,6 +186,9 @@ Y2 <- sum(y2/p)
 
 ```{r}
 cat("True ratio \"volume of the medium over total volume\":", sum(trees[(trees$d130 > 70.5/pi) & (trees$d130 < 117.5/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y2/a2)
+# Ex:
+# True ratio "volume of the medium over total volume": 0.3628267
+# Estimation of this ratio: 0.3623958
 ```
 
 ```{r}
@@ -178,6 +198,8 @@ Y3 <- sum(y3/p)
 
 ```{r}
 cat("True ratio \"volume of the biggest over total volume\":", sum(trees[(trees$d130 > 117.5/pi) & (trees$d130 < 500/pi),]$v)/sum(trees$v), "\nEstimation of this ratio:", Y3/a2)
+# True ratio "volume of the biggest over total volume": 0.06306254
+# Estimation of this ratio: 0.0529365
 ```
 
 
