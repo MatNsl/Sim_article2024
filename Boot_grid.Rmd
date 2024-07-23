@@ -28,8 +28,40 @@ source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ```
 
 ```{r}
-# Sample size
-n <- 1000
+i <- sample(1:10, 1) # choice of the rank of the identifier we want
+i
+```
+
+```{r}
+# Dimension of a small square (length of one side of the square)
+# We assume that c_dim is a divisor of 1000
+c_dim <- 10
+```
+
+```{r}
+# Function to sample at random following the grid
+sampling_grid <- function(i,c_dim){
+random_points <- data.frame(x = numeric(), y = numeric())
+
+for (l in 0:((1000/c_dim)-1)) {
+  if (l==0){
+    x_init <- i*c_dim
+  }else if ((3*l+i)*c_dim < (10)*c_dim){
+    x_init <- (3*l+i)*c_dim
+  }else{
+    x_init <- (((3*l+i)*c_dim)%%(c_dim*10))
+  }
+  k <- 0
+  while (x_init + 10*c_dim*k < 1000) {
+    a <- runif(1, x_init + 10*c_dim*k, x_init + 10*c_dim*k + c_dim)
+    b <- runif(1, l*c_dim, (l+1)*c_dim)
+    random_points <- rbind(random_points, list(a,b))
+    k <- k+1
+  }
+}
+colnames(random_points) <- list("x", "y")
+return(random_points)
+}
 ```
 
 # Monte Carlo alone
@@ -39,19 +71,18 @@ n <- 1000
 ```{r}
 ### Function to automate Monte Carlo method, to produce a variance
 
-MonteCarlo <- function(n, B, f){
-  # n: sample size; 
+MonteCarlo <- function(B, f){
   # B: number of iterations for MC; 
   # f: function to consider (with 2 variables, x and y)
   
-  p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
   est_MC <- c() # Vector containing all estimations
   for (b in 2:B) { # All in one "for" loop
-    # Uniform sampling over the whole territory
-    a1 <- runif(n, 0, 1000)
-    a2 <- runif(n, 0, 1000)
+    # Sampling over the whole territory
+    df_grid <- sampling_grid(i,c_dim)
     # Variable of interest derived from the sample
-    a <- mapply(f, a1, a2)
+    a <- mapply(f, df_grid$x, df_grid$y)
+    n <- nrow(df_grid)
+    p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
     est_MC <- append(est_MC, sum(a/p))
   }
   
@@ -103,17 +134,18 @@ est_boot <- function(df, p){
 ```{r}
 ### Function to automate Monte Carlo + bootstrap method
 
-MC_boot <- function(n, B1, B2, f){
-  # n: sample size; B1: number of iterations for MC;
+MC_boot <- function(B1, B2, f){
+  # B1: number of iterations for MC;
   # B2: number of iterations for bootstrap;
   # f: function to consider (2 arguments)
   
-  p <- sum(rep((1/1000)*(1/1000), n))
   var_est_boot <- c()
   for (b in 2:B1) {
     # One MC iteration at a time
-    random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+    random_points <- sampling_grid(i,c_dim)
     random_points$var <- mapply(f, random_points[, 1], random_points[, 2])
+    n <- nrow(random_points)
+    p <- sum(rep((1/1000)*(1/1000), n))
     a <- sum(random_points$var/p)
     
     # Bootstrap iterations
@@ -131,7 +163,7 @@ MC_boot <- function(n, B1, B2, f){
 ```{r}
 start.time <- Sys.time()
 
-res1_nb <- MonteCarlo(n, 10000, circle_nb)
+res1_nb <- MonteCarlo(10000, circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -143,14 +175,13 @@ time.taken
 ```{r}
 cat("Monte Carlo variance:", res1_nb)
 # Examples:
-# Monte Carlo variance: 2789037
-# Monte Carlo variance: 2827317
+# Monte Carlo variance: 
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res2_nb <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_nb)
+res2_nb <- MC_boot(B1 = 1000, B2 = 400, f = circle_nb)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -161,16 +192,14 @@ time.taken
 
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_nb)
-# Examples:
-# Mean of the variance of bootstrap samples: 2845120
-# Mean of the variance of bootstrap samples: 2851631
+# Example:
+# Mean of the variance of bootstrap samples: 
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_nb,res2_nb)-min(res1_nb,res2_nb))/min(res1_nb,res2_nb), "%", sep = "")
-# Examples:
-# We get a difference of: 2.01084%
-# We get a difference of: 0.8599411%
+# Example:
+# We get a difference of: 
 ```
 
 # Second example: volume of the forest
@@ -178,7 +207,7 @@ cat("We get a difference of: ", 100*(max(res1_nb,res2_nb)-min(res1_nb,res2_nb))/
 ```{r}
 start.time <- Sys.time()
 
-res1_vol <- MonteCarlo(n, 10000, circle_vol)
+res1_vol <- MonteCarlo(10000, circle_vol)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -190,13 +219,13 @@ time.taken
 ```{r}
 cat("Monte Carlo variance:", res1_vol)
 # Ex:
-# Monte Carlo variance: 98332.87
+# Monte Carlo variance: 
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res2_vol <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_vol)
+res2_vol <- MC_boot(B1 = 1000, B2 = 400, f = circle_vol)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -208,11 +237,11 @@ time.taken
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_vol)
 # Ex:
-# Mean of the variance of bootstrap samples: 98594.44
+# Mean of the variance of bootstrap samples: 
 ```
 
 ```{r}
 cat("We get a difference of: ", 100*(max(res1_vol,res2_vol)-min(res1_vol,res2_vol))/min(res1_vol,res2_vol), "%", sep = "")
 # Ex:
-# We get a difference of: 0.2660091%
+# We get a difference of: 
 ```
