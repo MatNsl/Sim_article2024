@@ -18,7 +18,9 @@ library(tibble) # for add_column
 
 ```{r}
 # Importing the database with the artificial forest
-trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+all_trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+# To get closer to the NFI process, trees whose circumference is under 23.5 cm are not considered
+trees <- trees[(pi*trees$d130 > 23.5),]
 ```
 
 ```{r}
@@ -29,6 +31,11 @@ source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ```{r}
 # Sample size
 n <- 1000
+```
+
+```{r}
+# True values
+cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees))
 ```
 
 # Monte Carlo alone
@@ -52,9 +59,8 @@ MonteCarlo <- function(n, B){
     a1 <- runif(n, 0, 1000)
     a2 <- runif(n, 0, 1000)
     # Variables of interest derived from the sample
-    var_nb <- mapply(circle_nb, a1, a2)
-    var_vol <- mapply(circle_vol, a1, a2)
-    MC_b <- data.frame(x = a1, y = a2, z = var_nb, t = var_vol)
+    var <- mapply(circle_all, a1, a2)
+    MC_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
     MC_df <- cbind(MC_df, MC_b)
     colnames(MC_df)[4*(b-1)+2] <- paste("x", b, sep = "")
     colnames(MC_df)[4*(b-1)+2+1] <- paste("y", b, sep = "")
@@ -67,7 +73,10 @@ MonteCarlo <- function(n, B){
   MC_df$useless <- NULL
   MC_est$useless <- NULL
   MC_var <- c(var(as.vector(t(MC_est[1,]))), var(as.vector(t(MC_est[2,]))), var(as.vector(t(MC_est[3,]))))
-  return(list(MC_df, MC_est, MC_var))
+  return(list(Data = MC_df, Estimators = MC_est, Variances = MC_var))
+  # Data: local variables (number and voume) for each point in each sample
+  # Estimators: 3 estimators (number, volume, ratio volume / number) for each sample
+  # Variances: Monte Carlo variance for each of the totals / ratio
 }
 ```
 
@@ -82,6 +91,14 @@ end.time <- Sys.time()
 time.taken <- end.time - start.time
 
 time.taken
+```
+
+```{r}
+# mean(as.vector(res_MC$Estimators[1,]))
+```
+
+```{r}
+# mean(res_MC$Estimators[1,])
 ```
 
 # Bootstrap for each Monte Carlo iteration
@@ -107,18 +124,20 @@ f_boot <- function(df_sample, B){
 ```
 
 ```{r}
-# Making of one estimation for each sample made by the bootstrap method
+# Making of estimations for each sample made by the bootstrap method
 est_boot <- function(df, p){
-  # df: dataframe with 3*B columns and n rows
+  # df: dataframe with 4*B columns and n rows
   
   n <- nrow(df) + 1 # sample size of the initial sample
-  nboot <- length(df)/3 # number of bootstrap samples
-  vec_est <- c()
+  nboot <- length(df)/4 # number of bootstrap samples
+  vec_est1 <- c()
+  vec_est2 <- c()
   for (c in 1:nboot) {
-    vec_est <- append(vec_est, (n/(n-1))*sum(df[,3*c]/p))
+    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3*c]/p))
+    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,4*c]/p))
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
-  vec_est <- sort(vec_est)
+  vec_est <- data.frame(est1 = vec_est1, est2 = vec_est2)
   return(vec_est)
   # Vector with one estimation for each sample
 }
@@ -127,7 +146,7 @@ est_boot <- function(df, p){
 ```{r}
 ### Function to automate Monte Carlo + bootstrap method
 
-MC_boot <- function(n, B1, B2, f){
+MC_boot <- function(n, B1, B2){
   # n: sample size; B1: number of iterations for MC;
   # B2: number of iterations for bootstrap;
   # f: function to consider (2 arguments)
@@ -146,16 +165,16 @@ MC_boot <- function(n, B1, B2, f){
     var_est_boot <- append(var_est_boot, var(est_boot_val))
   }
   return(mean(var_est_boot))
-  # Mean of the bootstrap variance
+  # Variances: mean of the bootstrap variance for each estimator
 }
 ```
 
-# First example: number of trees
+# Example
 
 ```{r}
 start.time <- Sys.time()
 
-res1_nb <- MonteCarlo(n, 10000, circle_nb)
+res1 <- MonteCarlo(n, 10000)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -165,16 +184,19 @@ time.taken
 ```
 
 ```{r}
-cat("Monte Carlo variance:", res1_nb)
-# Examples:
-# Monte Carlo variance: 2789037
-# Monte Carlo variance: 2827317
+cat("Monte Carlo means of estimators: \n - for the number of trees:", mean(as.vector(res1$Estimators[1,])), "\n - for the volume of trees:", mean(as.vector(res1$Estimators[1,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimators[1,])))
+# Example:
+```
+
+```{r}
+cat("Monte Carlo variance: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[2], "\n - for the ratio volume / number of trees:", res1$Variances[3])
+# Example:
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res2_nb <- MC_boot(n, B1 = 1000, B2 = 400, f = circle_nb)
+res2 <- MC_boot(n, B1 = 1000, B2 = 400)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -185,13 +207,15 @@ time.taken
 
 ```{r}
 cat("Mean of the variance of bootstrap samples:", res2_nb)
+cat("Mean of the variance of bootstrap samples: \n - for the number of trees:", res2$Variances[1], "\n - for the volume of trees:", res2$Variances[2], "\n - for the ratio volume / number of trees:", res2$Variances[3])
 # Examples:
 # Mean of the variance of bootstrap samples: 2845120
-# Mean of the variance of bootstrap samples: 2851631
+
 ```
 
 ```{r}
-cat("We get a difference of: ", 100*(max(res1_nb,res2_nb)-min(res1_nb,res2_nb))/min(res1_nb,res2_nb), "%", sep = "")
+diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
+cat("We get a difference of: ", diff_percent(), "%", sep = "")
 # Examples:
 # We get a difference of: 2.01084%
 # We get a difference of: 0.8599411%

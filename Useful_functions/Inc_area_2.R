@@ -1,6 +1,6 @@
-# Just a test
+# More than a test
 
-inc_area_test <- function(x, y, x0F, y0F, x1F, y1F, r){
+inc_area <- function(x, y, x0F, y0F, x1F, y1F, r){
   # x <- coord[1]
   # y <- coord[2]
   

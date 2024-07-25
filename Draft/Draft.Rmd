@@ -8,7 +8,7 @@ date: "2024-06-24"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Tessellation
+## Tessellation ----------
 
 ```{r}
 # Load necessary library
@@ -34,7 +34,7 @@ ggplot() +
   labs(title = "Square Tessellation", x = "X", y = "Y")
 ```
 
-## Draft
+## Draft ----------
 
 ```{r}
 # Tests (preliminaries)
@@ -271,7 +271,7 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 # p <- sum(rep((1/1000)*(1/1000)*((R^2)*pi)/2, n))
 ```
 
-## Circle
+## Circle ----------
 
 # Circle2
 
@@ -286,7 +286,7 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 ```
 
 
-## Draft for bootstrap
+## Draft for bootstrap ----------
 
 ```{r}
 # res[(res$ech1$x == res$ech1$x[1]),]
@@ -303,7 +303,7 @@ p <- sum(rep((1/1000)*(1/1000), n)) # :(
 # res <- f_boot(test, 3)
 ```
 
-### Complexity
+### Complexity ----------
 
 ```{r}
 # To evaluate complexity
@@ -421,7 +421,7 @@ est_boot3 <- sort(est_boot3)
 
 ```
 
-### A first package
+### A first package ----------
 
 ```{r}
 # Same result with function?
@@ -472,7 +472,7 @@ boot.ci(res_boot, type = "bca")
 #  estimated adjustment 'a' is NA
 ```
 
-### Another package
+### Another package ----------
 
 ```{r}
 install.packages("bootstrap")
@@ -521,7 +521,7 @@ results <- bcanon(1:n,150,theta,random_points, alpha = 0.95)
 results$confpoints # NaN
 ```
 
-# Grid for trees
+# Grid for trees ----------
 
 ```{r}
 # Shift considered to add randomization
@@ -680,7 +680,7 @@ trend forcément égale à 3 (?)
 plot(x = random_points$x, y = random_points$y, main = "Regular points", panel.first=grid())
 ```
 
-# Bootstrap
+# Bootstrap ----------
 
 ## ABC-BCA
 
@@ -761,7 +761,7 @@ bcanon <- function(x,bootsam,theta,...,alpha =
 # Produces an error
 ```
 
-# Alarm / beep / message when it finishes running
+# Alarm / beep / message when it finishes running ----------
 
 ```{r}
 #Have R email you when it's done running.
@@ -779,7 +779,7 @@ library(beepr)
 beep()
 ```
 
-# Variance
+# Variance ----------
 
 ```{r}
 # Unbiased variance
@@ -793,4 +793,17 @@ varbis <- function(x){
 }
 ```
 
+# Print LaTeX code as output of R code (failure) ----------
+
+```{r}
+print("* $H_o = `r 1 + 1`$")
+b0 = "$\\beta_0$"
+m3 = "$m^3$"
+cat("thing:",m3)
+cat("thing:",`b0`)
+```
+
+```{r}
+print(bquote(m^2))
+```
 

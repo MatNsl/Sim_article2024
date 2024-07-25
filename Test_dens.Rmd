@@ -1,0 +1,132 @@
+---
+title: "Test_dens"
+output: pdf_document
+date: "2024-07-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal of this file is to correct a mistake made on previous versions of functions to create local variables (those previous versions may be found in Old_Circle.R).
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column and tibble
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+```
+
+The variable of interest is the number of trees.
+
+```{r}
+# Sample size
+n <- 100
+
+# Radius
+R <- 4
+```
+
+# Two functions
+
+```{r}
+## Function to produce the local variable for the number of trees
+circle_nb_old <- function(x1, x2, R=4){
+  # 2 coordinates (x1, x2) and a radius (R)
+  
+  # Preliminary: inclusion area
+  source("~/work/Sim_article2024/Useful_functions/Inc_area.R")
+  
+  list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2) & (trees$x > frontier[1]) & (trees$x < frontier[3]) & (trees$y > frontier[2]) & (trees$y < frontier[4]))
+  local_var <- sum(length(list_trees)/inc_area(c(x1, x2),frontier[1],frontier[2],frontier[3],frontier[4],R))
+  return(local_var)
+  # list_trees: identifiers of targeted trees; local_var: local variable based on the number of trees
+}
+```
+
+```{r}
+## Function to produce the local variable for the number of trees
+circle_nb_new2 <- function(x1, x2, R=4){
+  # 2 coordinates (x1, x2) and a radius (R)
+  
+  # Preliminary: inclusion area
+  source("~/work/Sim_article2024/Useful_functions/Inc_area_2.R")
+  
+  list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2) & (trees$x > frontier[1]) & (trees$x < frontier[3]) & (trees$y > frontier[2]) & (trees$y < frontier[4]))
+  trees1 <- trees
+  trees1$var1 <- rep(1,nrow(trees1))
+  if (length(list_trees) != 0){
+    local_var <- sum((trees1[list_trees,]$var1)/mapply(inc_area_test, trees1[list_trees,]$x, trees1[list_trees,]$y, MoreArgs = list(frontier[1],frontier[2],frontier[3],frontier[4],R)))
+  }
+  else{local_var <- 0}
+  return(local_var)
+  # list_trees: identifiers of targeted trees; local_var: local variable based on the number of trees
+}
+```
+
+# Tests
+
+```{r}
+# Small square
+frontier <- c(500, 568, 510, 578)
+# Ex: frontier <- c(500, 516, 510, 526)
+# frontier <- c(500, 557, 510, 567)
+# frontier <- c(500, 568, 510, 578)
+```
+
+```{r}
+plot(trees$x, trees$y, xlim = c(frontier[1], frontier[3]), ylim = c(frontier[2], frontier[4]))
+```
+
+```{r}
+true_val <- nrow(trees[(trees$x > frontier[1]) & (trees$x < frontier[3]) & (trees$y > frontier[2]) & (trees$y < frontier[4]),])
+true_val
+# Ex: 19
+# 7
+# 12
+```
+
+```{r}
+# Inclusion density function
+p1 <- (1/(frontier[3] - frontier[1]))*(1/(frontier[4] - frontier[2]))
+p <- sum(rep(p1, n))
+```
+
+```{r}
+gap_old <- c()
+gap_new <- c()
+i = 1
+for (i in 1:1000) {
+  sampling <- data.frame(x.1 = runif(n, frontier[1], frontier[3]), y.1 = runif(n, frontier[2], frontier[4]))
+  est_old <- sum(mapply(circle_nb_old, sampling[, 1], sampling[, 2])/p)
+  est_new <- sum(mapply(circle_nb_new2, sampling[, 1], sampling[, 2])/p)
+  gap_old <- append(gap_old, abs(est_old-true_val))
+  gap_new <- append(gap_new, abs(est_new-true_val))
+  i <- i+1
+}
+```
+
+```{r}
+sum(gap_new - gap_old)
+# Ex: -0.6188775
+# -546.3402
+# -97.20414
+```
+
+```{r}
+sum(as.numeric(gap_new > gap_old) - as.numeric(gap_new < gap_old))
+# Ex: 8
+# -918
+# -188
+```
+
+
+
+
+
