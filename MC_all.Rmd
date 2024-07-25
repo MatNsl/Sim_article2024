@@ -92,7 +92,7 @@ MonteCarlo <- function(n, B){
   colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
   all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
   
-  return(list(`Local Variables` = MC_df, Estimators = MC_est, Variances = MC_var, `Confidence Intervals` = all_CI))
+  return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var, `Confidence Intervals` = all_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
   # Estimators: 3 estimators (number, volume, ratio volume / number) for each sample
   # Variances: Monte Carlo variance for each of the totals / ratio
@@ -141,7 +141,7 @@ f_boot <- function(df_sample, B){
     colnames(df_boot)[b] <- paste("ech", b, sep = "")
   }
   return(do.call(data.frame, df_boot))
-  # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size n
+  # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
 }
 ```
 
@@ -171,30 +171,77 @@ est_boot <- function(df, p){
 ### Function to automate Monte Carlo + bootstrap method
 
 MC_boot <- function(n, B1, B2){
-  # n: sample size; B1: number of iterations for MC;
-  # B2: number of iterations for bootstrap;
-  # f: function to consider (2 arguments)
+  # n: sample size;
+  # B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap
   
   p <- sum(rep((1/1000)*(1/1000), n))
-  local_var <- list() # All 
-  var_est_boot <- c()
-  for (b in 2:B1) {
-    # One MC iteration at a time
-    random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
-    random_points$var <- mapply(f, random_points[, 1], random_points[, 2])
-    a <- sum(random_points$var/p)
+  BOOT_df <- list() # All local variables
+  BOOT_est <- list() # All estimations
+  BOOT_var <- list() # Variances
+  BOOT_CI <- list() # Confidence Intervals
+  for (b in 1:B1) { # One MC iteration at a time
+    # Uniform sampling over the whole territory
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
+    var <- mapply(circle_all, a1, a2)
+    df_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
+    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
+    est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
     
     # Bootstrap iterations
-    df_boot <- f_boot(random_points, B2)
+    df_boot <- f_boot(df_b, B2)
     est_boot_val <- est_boot(df_boot, p)
-    var_est_boot <- append(var_est_boot, var(est_boot_val))
     
-    local_var <- c(local_var, data_init = random_points, data_boot = est_boot_val)
+    BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
+    names(BOOT_var)[b] <- paste("Variance", b, sep = "")
+    BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
+    names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
+    BOOT_est <- c(BOOT_est, list(est_init_b = est_b, est_boot_b = est_boot_val))
+    names(BOOT_est)[(2*b-1):(2*b)] <- c(paste("est_MC", b, sep = ""), paste("est_boot", b, sep = ""))
+    
+    # Confidence intervals
+    norm_CI <- data.frame(useless = rep(0, 2))
+    perc_CI <- data.frame(useless = rep(0, 2))
+    rev_perc_CI <- data.frame(useless = rep(0, 2))
+    for (l in 1:3) { # Loop: one estimator each time
+      sorted_est <- sort(est_boot_val[,l])
+      lim_inf <- sorted_est[floor(B2*2.5/100)]
+      lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
+      perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
+      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l,]*2 - lim_sup, est_b[l,]*2 - lim_inf)))
+      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l,]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l,]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
+    }
+    norm_CI$useless <- NULL
+    perc_CI$useless <- NULL
+    rev_perc_CI$useless <- NULL
+    colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
+    # BOOT_CI <- c(BOOT_CI, CI_b = all_CI)
+    BOOT_CI[[b]] <- all_CI
+    names(BOOT_CI)[b] <- paste("CI", b, sep = "")
   }
-  return(list(`Local Variables` = local_var, Variances = boot_var))
+  return(list(`Local Variables` = BOOT_df, Estimations = BOOT_est, Variances = BOOT_var, `Confidence Intervals` = BOOT_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
+  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
   # Variances: mean of the bootstrap variance for each estimator
+  # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
 }
+```
+
+```{r}
+# Small test
+
+start.time <- Sys.time()
+
+res_MC_boot <- MC_boot(100, 200, 100)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
 ```
 
 # Example
@@ -264,7 +311,9 @@ time.taken
 ```
 
 ```{r}
-cat("Mean of the variance of bootstrap samples:", res2_nb)
+# PROBLEM NOW: MEAN of variance for each estimation
+# How to extract it without a loop? mapply with function made up
+
 cat("Mean of the variance of bootstrap samples: \n - for the number of trees:", res2$Variances[1], "\n - for the volume of trees:", res2$Variances[2], "\n - for the ratio volume / number of trees:", res2$Variances[3])
 # Example:
 ```
