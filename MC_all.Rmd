@@ -20,7 +20,7 @@ library(tibble) # for add_column
 # Importing the database with the artificial forest
 all_trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
 # To get closer to the NFI process, trees whose circumference is under 23.5 cm are not considered
-trees <- trees[(pi*trees$d130 > 23.5),]
+trees <- all_trees[(pi*all_trees$d130 > 23.5),]
 ```
 
 ```{r}
@@ -94,33 +94,10 @@ MonteCarlo <- function(n, B){
   
   return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var, `Confidence Intervals` = all_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
-  # Estimators: 3 estimators (number, volume, ratio volume / number) for each sample
+  # Estimations: 3 Estimations (number, volume, ratio volume / number) for each sample
   # Variances: Monte Carlo variance for each of the totals / ratio
   # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
 }
-```
-
-```{r}
-# Small test
-
-start.time <- Sys.time()
-
-res_MC <- MonteCarlo(100, 200)
-
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-
-time.taken
-```
-
-```{r}
-# mean(as.vector(t(res_MC$Estimators[1,])))
-
-cat("95% confidence interval using the percentile method: 
-      [", res_MC$`Confidence Intervals`$Percentile[1,1], ";", res_MC$`Confidence Intervals`$Percentile[2,1], "]\n" )
-
-# cat("95% confidence interval using the reverse percentile method: 
-#       [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]\n" )
 ```
 
 # Bootstrap for each Monte Carlo iteration
@@ -231,19 +208,6 @@ MC_boot <- function(n, B1, B2){
 }
 ```
 
-```{r}
-# Small test
-
-start.time <- Sys.time()
-
-res_MC_boot <- MC_boot(100, 200, 100)
-
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-
-time.taken
-```
-
 # Example
 
 ## Monte Carlo alone
@@ -261,39 +225,63 @@ time.taken
 ```
 
 ```{r}
-cat("Monte Carlo means of estimators: \n - for the number of trees:", mean(as.vector(t(res1$Estimators[1,]))), "\n - for the volume of trees:", mean(as.vector(t(res1$Estimators[2,]))), "\n - for the ratio volume / number of trees:", mean(as.vector(t(res1$Estimators[3,]))))
+cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(t(res1$Estimations[1,]))), "\n - for the volume of trees:", mean(as.vector(t(res1$Estimations[2,]))), "\n - for the ratio volume / number of trees:", mean(as.vector(t(res1$Estimations[3,]))))
+
 # Example:
+# Monte Carlo means of estimations: 
+#  - for the number of trees: 29299.58 
+#  - for the volume of trees: 5418.03 
+#  - for the ratio volume / number of trees: 0.1849162
 ```
 
 ```{r}
 cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[2], "\n - for the ratio volume / number of trees:", res1$Variances[3])
+
 # Example:
+# Monte Carlo variances: 
+#  - for the number of trees: 2531530 
+#  - for the volume of trees: 96840.38 
+#  - for the ratio volume / number of trees: 1.116039e-05
 ```
 
 ```{r}
-cat("95% confidence intervals using the normal method: 
-    \n - for the number of trees: [", res1$`Confidence Intervals`$Normal[1,1], ";", res1$`Confidence Intervals`$Normal[2,1], 
+cat("95% confidence intervals using the normal method:\n - for the number of trees: [", res1$`Confidence Intervals`$Normal[1,1], ";", res1$`Confidence Intervals`$Normal[2,1], 
     "]\n - for the volume of trees: [", res1$`Confidence Intervals`$Normal[1,2], ";", res1$`Confidence Intervals`$Normal[2,2], 
     "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$Normal[1,3], ";", res1$`Confidence Intervals`$Normal[2,3],
     "]")
+
+# Example:
+# 95% confidence intervals using the normal method: 
+#  - for the number of trees: [ 25885.94 ; 32122.85 ]
+#  - for the volume of trees: [ 4727.737 ; 5947.587 ]
+#  - for the ratio volume / number of trees: [ 0.1774817 ; 0.1905771 ]
 ```
 
 ```{r}
-cat("95% confidence intervals using the percentile method: 
-    \n - for the number of trees: [", res1$`Confidence Intervals`$Percentile[1,1], ";", res1$`Confidence Intervals`$Percentile[2,1], 
+cat("95% confidence intervals using the percentile method:\n - for the number of trees: [", res1$`Confidence Intervals`$Percentile[1,1], ";", res1$`Confidence Intervals`$Percentile[2,1], 
     "]\n - for the volume of trees: [", res1$`Confidence Intervals`$Percentile[1,2], ";", res1$`Confidence Intervals`$Percentile[2,2], 
     "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$Percentile[1,3], ";", res1$`Confidence Intervals`$Percentile[2,3],
-    "]"
-    )
+    "]")
+
+# Example:
+# 95% confidence intervals using the percentile method: 
+#  - for the number of trees: [ 26203.27 ; 32429.41 ]
+#  - for the volume of trees: [ 4817.327 ; 6027.707 ]
+#  - for the ratio volume / number of trees: [ 0.1786038 ; 0.1915195 ]
 ```
 
 ```{r}
-cat("95% confidence intervals using the reverse percentile method: 
-    \n - for the number of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,1], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,1], 
+cat("95% confidence intervals using the reverse percentile method:\n - for the number of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,1], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,1], 
     "]\n - for the volume of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,2], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,2], 
     "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,3], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,3],
     "]"
     )
+
+# Example:
+# 95% confidence intervals using the reverse percentile method:
+#  - for the number of trees: [ 25579.38 ; 31805.52 ]
+#  - for the volume of trees: [ 4647.617 ; 5857.997 ]
+#  - for the ratio volume / number of trees: [ 0.1765393 ; 0.189455 ]
 ```
 
 ## Monte Carlo and bootstrap
@@ -311,17 +299,41 @@ time.taken
 ```
 
 ```{r}
-# PROBLEM NOW: MEAN of variance for each estimation
-# How to extract it without a loop? mapply with function made up
+VAR_nb <- c()
+for (elt in res2$Variances) {
+  VAR_nb <- append(VAR_nb, elt$var_nb)
+}
 
-cat("Mean of the variance of bootstrap samples: \n - for the number of trees:", res2$Variances[1], "\n - for the volume of trees:", res2$Variances[2], "\n - for the ratio volume / number of trees:", res2$Variances[3])
+VAR_vol <- c()
+for (elt in res2$Variances) {
+  VAR_vol <- append(VAR_vol, elt$var_vol)
+}
+
+VAR_ratio <- c()
+for (elt in res2$Variances) {
+  VAR_ratio <- append(VAR_ratio, elt$var_ratio)
+}
+```
+
+```{r}
+cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(VAR_nb), "\n - for the volume of trees:", mean(VAR_vol), "\n - for the ratio volume / number of trees:", mean(VAR_ratio))
+
 # Example:
+# Mean of the variance of bootstrap samples:
+#  - for the number of trees: 6.273237e+16 
+#  - for the volume of trees: 98861.68 
+#  - for the ratio volume / number of trees: 0.1741024
 ```
 
 ## Comparison of the variances
 
 ```{r}
 diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
-cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], res2$Variances[1]), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], res2$Variances[2]), "\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], res2$Variances[3]), sep = "")
+cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], mean(VAR_nb)), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], mean(VAR_vol)), "%\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], mean(VAR_ratio)), "%", sep = "")
+
 # Example:
+# Difference between the two estimations of variance: 
+#  - for the number of trees: 2.478042e+12%
+#  - for the volume of trees: 2.087256%
+#  - for the ratio volume / number of trees: 1559903%
 ```

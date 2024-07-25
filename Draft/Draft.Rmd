@@ -807,3 +807,42 @@ cat("thing:",`b0`)
 print(bquote(m^2))
 ```
 
+# Small examples for MC_all.Rmd ----------
+
+```{r}
+# Small test
+
+start.time <- Sys.time()
+
+res_MC <- MonteCarlo(100, 200)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+# mean(as.vector(t(res_MC$Estimators[1,])))
+
+cat("95% confidence interval using the percentile method: 
+      [", res_MC$`Confidence Intervals`$Percentile[1,1], ";", res_MC$`Confidence Intervals`$Percentile[2,1], "]\n" )
+
+# cat("95% confidence interval using the reverse percentile method: 
+#       [", est_init*2 - lim_sup, ";", est_init*2 - lim_inf, "]\n" )
+```
+
+```{r}
+# Small test
+
+start.time <- Sys.time()
+
+res_MC_boot <- MC_boot(100, 200, 100)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+
