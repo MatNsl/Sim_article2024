@@ -95,7 +95,7 @@ circle_nb_new2 <- function(x1, x2, R=4){
 
 est_new1 <- circle_nb_new(501,507)/p
 est_new2 <- circle_nb_new2(501,507)/p
-# est_new1 = est_new2
+# est_new1 == est_new2 # TRUE
 
 
 ##### Automation ----------
