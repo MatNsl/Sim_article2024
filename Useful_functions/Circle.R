@@ -6,7 +6,7 @@ source("~/work/Sim_article2024/Useful_functions/Inc_area_2.R")
 
 ### With one single circle -----
 
-## Function to produce all local variable from one point
+## Function to produce all local variables from one point
 circle_all <- function(x1, x2, R=5){
   # 2 coordinates (x1, x2) and a radius (R)
   
@@ -90,6 +90,51 @@ circle_vol_size <- function(x1, x2, R=5, bounds = c(23.5, 70.5)){
 }
 
 ### With three circles -----
+
+## Function to produce all local variables from one point
+circle3_all <- function(x1, x2, R1=15, R2=9, R3=6){
+  # 2 coordinates (x1, x2) and a radius (R)
+  
+  list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R1^2))
+  
+  list_trees1 <- list_trees[pi*trees[list_trees,]$d130 > 117.5] # List with the biggest trees
+  list_trees2 <- list_trees[(pi*trees[list_trees,]$d130 < 117.5) & (pi*trees[list_trees,]$d130 > 70.5) & ((x1 - trees[list_trees,]$x)^2 + (x2 - trees[list_trees,]$y)^2 <= R2^2)] # medium trees
+  list_trees3 <- list_trees[(pi*trees[list_trees,]$d130 < 70.5) & ((x1 - trees[list_trees,]$x)^2 + (x2 - trees[list_trees,]$y)^2 <= R3^2)] # smallest trees
+  # (pi*trees[list_trees,]$d130 > 23.5) & = useless since trees already excludes the little ones
+  
+  if (length(list_trees1) != 0){
+    local_var_nb1 <- sum(1/mapply(inc_area, trees[list_trees1,]$x, trees[list_trees1,]$y, MoreArgs = list(0,0,1000,1000,R1)))
+    local_var_vol1 <- sum((trees[list_trees1,]$v)/mapply(inc_area, trees[list_trees1,]$x, trees[list_trees1,]$y, MoreArgs = list(0,0,1000,1000,R1)))
+  }
+  else{
+    local_var_nb1 <- 0
+    local_var_vol1 <- 0
+  }
+  
+  if (length(list_trees2) != 0){
+    local_var_nb2 <- sum(1/mapply(inc_area, trees[list_trees2,]$x, trees[list_trees2,]$y, MoreArgs = list(0,0,1000,1000,R2)))
+    local_var_vol2 <- sum((trees[list_trees2,]$v)/mapply(inc_area, trees[list_trees2,]$x, trees[list_trees2,]$y, MoreArgs = list(0,0,1000,1000,R2)))
+  }
+  else{
+    local_var_nb2 <- 0
+    local_var_vol2 <- 0
+  }
+  
+  if (length(list_trees3) != 0){
+    local_var_nb3 <- sum(1/mapply(inc_area, trees[list_trees3,]$x, trees[list_trees3,]$y, MoreArgs = list(0,0,1000,1000,R3)))
+    local_var_vol3 <- sum((trees[list_trees3,]$v)/mapply(inc_area, trees[list_trees3,]$x, trees[list_trees3,]$y, MoreArgs = list(0,0,1000,1000,R3)))
+  }
+  else{
+    local_var_nb3 <- 0
+    local_var_vol3 <- 0
+  }
+  
+  local_var_nb <- local_var_nb1 + local_var_nb2 + local_var_nb3
+  local_var_vol <- local_var_vol1 + local_var_vol2 + local_var_vol3
+  
+  return(c(local_var_nb,local_var_vol))
+  # local_var_nb: local variable based on the number of trees; local_var_vol: local variable based on the volume of trees
+}
 
 ## Function to produce the local variable for the number of trees with 3 circles
 circle3_nb <- function(x1, x2, R1=15, R2=9, R3=6){

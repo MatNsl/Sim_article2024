@@ -1,5 +1,5 @@
 ---
-title: "Monte Carlo and bootstrap for all parameters with a grid"
+title: "Monte Carlo and bootstrap for all parameters with 3 circles"
 output: pdf_document
 date: "2024-07-26"
 ---
@@ -8,10 +8,10 @@ date: "2024-07-26"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees), variances of these estimators and confidence intervals. The same elements are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may verify the invalidity of the bootstrap strategy to find the estimation of the variances.
+The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees), variances of these estimators and confidence intervals. The same elements are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances.
 
 
-In this document, one single circle with a radius of 5 is used to compute local variables. Besides, and more importantly, a grid is used for sampling.
+In this document, three circles are used to compute local variables, like the French NFI process.
 
 ```{r}
 library(readxl) # to read the initial file
@@ -39,43 +39,6 @@ n <- 1000
 ```
 
 ```{r}
-i <- sample(1:10, 1) # choice of the rank of the identifier we want
-i
-```
-
-```{r}
-# Dimension of a small square (length of one side of the square)
-# We assume that c_dim is a divisor of 1000
-c_dim <- 10
-```
-
-```{r}
-# Function to sample at random following the grid
-sampling_grid <- function(i,c_dim){
-random_points <- data.frame(x = numeric(), y = numeric())
-
-for (l in 0:((1000/c_dim)-1)) {
-  if (l==0){
-    x_init <- i*c_dim
-  }else if ((3*l+i)*c_dim < (10)*c_dim){
-    x_init <- (3*l+i)*c_dim
-  }else{
-    x_init <- (((3*l+i)*c_dim)%%(c_dim*10))
-  }
-  k <- 0
-  while (x_init + 10*c_dim*k < 1000) {
-    a <- runif(1, x_init + 10*c_dim*k, x_init + 10*c_dim*k + c_dim)
-    b <- runif(1, l*c_dim, (l+1)*c_dim)
-    random_points <- rbind(random_points, list(a,b))
-    k <- k+1
-  }
-}
-colnames(random_points) <- list("x", "y")
-return(random_points)
-}
-```
-
-```{r}
 # True values
 cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees))
 ```
@@ -88,21 +51,20 @@ cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), "\nWhi
 ### Function to automate Monte Carlo method
 
 MonteCarlo <- function(n, B){
+  # n: sample size;
   # B: number of iterations for MC
   
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
+  
   MC_df <- data.frame(useless = rep(0, n))
   MC_est <- data.frame(useless = rep(0, 3), row.names = c("est_nb", "est_vol", "est_ratio"))
   
   for (b in 1:B) { # All in one "for" loop
-    # Sampling over the whole territory
-    df_grid <- sampling_grid(i,c_dim)
-    a1 <- df_grid$x
-    a2 <- df_grid$y
-    # n <- nrow(df_grid) # sample size
-    # p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
+    # Uniform sampling over the whole territory
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
     # Variables of interest derived from the sample
-    var <- mapply(circle_all, a1, a2)
+    var <- mapply(circle3_all, a1, a2)
     MC_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
     MC_df <- cbind(MC_df, MC_b)
     colnames(MC_df)[(4*(b-1)+2):(4*(b-1)+2+3)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("nb", b, sep = ""), paste("vol", b, sep = ""))
@@ -192,6 +154,7 @@ est_boot <- function(df, p){
 ### Function to automate Monte Carlo + bootstrap method
 
 MC_boot <- function(n, B1, B2){
+  # n: sample size;
   # B1: number of iterations for MC;
   # B2: number of iterations for bootstrap
   
@@ -202,12 +165,9 @@ MC_boot <- function(n, B1, B2){
   BOOT_CI <- list() # Confidence Intervals
   for (b in 1:B1) { # One MC iteration at a time
     # Uniform sampling over the whole territory
-    df_grid <- sampling_grid(i,c_dim)
-    a1 <- df_grid$x
-    a2 <- df_grid$y
-    # n <- nrow(df_grid) # sample size
-    # p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
-    var <- mapply(circle_all, a1, a2)
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
+    var <- mapply(circle3_all, a1, a2)
     df_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
     colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
     est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
@@ -262,7 +222,7 @@ MC_boot <- function(n, B1, B2){
 start.time <- Sys.time()
 
 res1 <- MonteCarlo(n, 10000)
-# Just one circle to begin with
+# With 3 circles
 
 end.time <- Sys.time()
 time.taken <- end.time - start.time
@@ -321,7 +281,7 @@ cat("95% confidence intervals using the reverse percentile method:\n - for the n
 start.time <- Sys.time()
 
 res2 <- MC_boot(n, B1 = 1000, B2 = 400)
-# Just one circle to begin with
+# With 3 circles
 
 end.time <- Sys.time()
 time.taken <- end.time - start.time
