@@ -845,4 +845,38 @@ time.taken <- end.time - start.time
 time.taken
 ```
 
+# Old f_boot with the tibble point of view still readable for MC_all.Rmd ----------
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; 
+  # B: number of bootstrap samples made thanks to df_sample
+  
+  # df_boot <- tibble(.rows = (nrow(df_sample)-1))
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
+  for (b in 1:B) {
+    nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
+    # (n-1) points at random
+    sample_b <- df_sample[nb,]
+    # df_boot <- df_boot %>% add_column(new_col = sample_b)
+    df_boot <- cbind(df_boot, sample_b)
+    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
+  }
+  df_boot$useless <- NULL
+  # return(do.call(data.frame, df_boot))
+  return(df_boot)
+  # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
+}
+```
+
+VAR_vol <- c()
+for (elt in res2$Variances) {
+  VAR_vol <- append(VAR_vol, elt$var_vol)
+}
+
+VAR_ratio <- c()
+for (elt in res2$Variances) {
+  VAR_ratio <- append(VAR_ratio, elt$var_ratio)
+}
+
 

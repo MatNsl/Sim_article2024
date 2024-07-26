@@ -109,18 +109,15 @@ f_boot <- function(df_sample, B){
   # df_sample: original sample; 
   # B: number of bootstrap samples made thanks to df_sample
   
-  # df_boot <- tibble(.rows = (nrow(df_sample)-1))
   df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
   for (b in 1:B) {
     nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
     # (n-1) points at random
     sample_b <- df_sample[nb,]
-    # df_boot <- df_boot %>% add_column(new_col = sample_b)
     df_boot <- cbind(df_boot, sample_b)
     colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
   df_boot$useless <- NULL
-  # return(do.call(data.frame, df_boot))
   return(df_boot)
   # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
 }
@@ -303,18 +300,36 @@ time.taken
 ```
 
 ```{r}
+# We want all the variances obtained for each parameter of interest, 
+# to find the mean for each of these series
+EST_nb <- c()
+EST_vol <- c()
+EST_ratio <- c()
+for (elt in res2$Estimations) {
+  if ("data.frame" %in% class(elt)){ # we target bootstrap samples made from each MC iteration
+    EST_nb <- append(EST_nb, mean(elt$est_nb))
+    EST_vol <- append(EST_vol, mean(elt$est_vol))
+    EST_ratio <- append(EST_ratio, mean(elt$est_ratio))
+  }
+}
+```
+
+```{r}
+cat("Mean of the means of estimations obtained through each bootstrap process:\n - for the number of trees:", mean(EST_nb), "\n - for the volume of trees:", mean(EST_vol), "\n - for the ratio volume / number of trees:", mean(EST_ratio))
+
+# Example:
+
+```
+
+```{r}
+# We want all the variances obtained for each parameter of interest, 
+# to find the mean for each of these series
 VAR_nb <- c()
-for (elt in res2$Variances) {
-  VAR_nb <- append(VAR_nb, elt$var_nb)
-}
-
 VAR_vol <- c()
-for (elt in res2$Variances) {
-  VAR_vol <- append(VAR_vol, elt$var_vol)
-}
-
 VAR_ratio <- c()
 for (elt in res2$Variances) {
+  VAR_nb <- append(VAR_nb, elt$var_nb)
+  VAR_vol <- append(VAR_vol, elt$var_vol)
   VAR_ratio <- append(VAR_ratio, elt$var_ratio)
 }
 ```
@@ -323,10 +338,7 @@ for (elt in res2$Variances) {
 cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(VAR_nb), "\n - for the volume of trees:", mean(VAR_vol), "\n - for the ratio volume / number of trees:", mean(VAR_ratio))
 
 # Example:
-# Mean of the variance of bootstrap samples:
-#  - for the number of trees: 6.273237e+16 
-#  - for the volume of trees: 98861.68 
-#  - for the ratio volume / number of trees: 0.1741024
+
 ```
 
 ## Comparison of the variances
@@ -336,8 +348,5 @@ diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
 cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], mean(VAR_nb)), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], mean(VAR_vol)), "%\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], mean(VAR_ratio)), "%", sep = "")
 
 # Example:
-# Difference between the two estimations of variance: 
-#  - for the number of trees: 2.478042e+12%
-#  - for the volume of trees: 2.087256%
-#  - for the ratio volume / number of trees: 1559903%
+
 ```
