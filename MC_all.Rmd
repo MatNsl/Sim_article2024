@@ -109,15 +109,19 @@ f_boot <- function(df_sample, B){
   # df_sample: original sample; 
   # B: number of bootstrap samples made thanks to df_sample
   
-  df_boot <- tibble(.rows = (nrow(df_sample)-1))
+  # df_boot <- tibble(.rows = (nrow(df_sample)-1))
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
   for (b in 1:B) {
     nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
     # (n-1) points at random
     sample_b <- df_sample[nb,]
-    df_boot <- df_boot %>% add_column(new_col = sample_b)
-    colnames(df_boot)[b] <- paste("ech", b, sep = "")
+    # df_boot <- df_boot %>% add_column(new_col = sample_b)
+    df_boot <- cbind(df_boot, sample_b)
+    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
-  return(do.call(data.frame, df_boot))
+  df_boot$useless <- NULL
+  # return(do.call(data.frame, df_boot))
+  return(df_boot)
   # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
 }
 ```
@@ -133,9 +137,9 @@ est_boot <- function(df, p){
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3*c]/p))
+    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + (4*(c-1))]/p))
     vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,4*c]/p))
-    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,4*c]/p))/((n/(n-1))*sum(df[,3*c]/p)))
+    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,4*c]/p))/((n/(n-1))*sum(df[,3 + (4*(c-1))]/p)))
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
