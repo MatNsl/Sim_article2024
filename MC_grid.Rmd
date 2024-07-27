@@ -274,14 +274,20 @@ time.taken
 cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(t(res1$Estimations[1,]))), "\n - for the volume of trees:", mean(as.vector(t(res1$Estimations[2,]))), "\n - for the ratio volume / number of trees:", mean(as.vector(t(res1$Estimations[3,]))))
 
 # Example:
-
+## Monte Carlo means of estimations:
+##  - for the number of trees: 29529.27
+##  - for the volume of trees: 5428.676
+##  - for the ratio volume / number of trees: 0.1838376
 ```
 
 ```{r}
 cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[2], "\n - for the ratio volume / number of trees:", res1$Variances[3])
 
 # Example:
-
+## Monte Carlo variances:
+##  - for the number of trees: 263478.6
+##  - for the volume of trees: 15475.27
+##  - for the ratio volume / number of trees: 6.470082e-06
 ```
 
 ```{r}
@@ -291,7 +297,10 @@ cat("95% confidence intervals using the normal method:\n - for the number of tre
     "]")
 
 # Example:
-
+## 95% confidence intervals using the normal method:
+##  - for the number of trees: [ 28787.75 ; 30799.86 ]
+##  - for the volume of trees: [ 5115.539 ; 5603.177 ]
+##  - for the ratio volume / number of trees: [ 0.1748962 ; 0.1848671 ]
 ```
 
 ```{r}
@@ -301,7 +310,10 @@ cat("95% confidence intervals using the percentile method:\n - for the number of
     "]")
 
 # Example:
-
+## 95% confidence intervals using the percentile method:
+##  - for the number of trees: [ 28533.3 ; 30557.75 ]
+##  - for the volume of trees: [ 5188.069 ; 5673.772 ]
+##  - for the ratio volume / number of trees: [ 0.1787598 ; 0.1888164 ]
 ```
 
 ```{r}
@@ -312,7 +324,10 @@ cat("95% confidence intervals using the reverse percentile method:\n - for the n
     )
 
 # Example:
-
+## 95% confidence intervals using the reverse percentile method:
+##  - for the number of trees: [ 29029.86 ; 31054.31 ]
+##  - for the volume of trees: [ 5044.944 ; 5530.647 ]
+##  - for the ratio volume / number of trees: [ 0.1709469 ; 0.1810035 ]
 ```
 
 ## Monte Carlo and bootstrap
@@ -348,7 +363,10 @@ for (elt in res2$Estimations) {
 cat("Mean of the means of estimations obtained through each bootstrap process:\n - for the number of trees:", mean(EST_nb), "\n - for the volume of trees:", mean(EST_vol), "\n - for the ratio volume / number of trees:", mean(EST_ratio))
 
 # Example:
-
+## Mean of the means of estimations obtained through each bootstrap process:
+##  - for the number of trees: 29546.03
+##  - for the volume of trees: 5431.112
+##  - for the ratio volume / number of trees: 0.1838134
 ```
 
 ```{r}
@@ -368,7 +386,10 @@ for (elt in res2$Variances) {
 cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(VAR_nb), "\n - for the volume of trees:", mean(VAR_vol), "\n - for the ratio volume / number of trees:", mean(VAR_ratio))
 
 # Example:
-
+## Mean of the variance of bootstrap samples:
+##  - for the number of trees: 2630037
+##  - for the volume of trees: 99634.96
+##  - for the ratio volume / number of trees: 1.033748e-05
 ```
 
 ## Comparison of the variances
@@ -378,6 +399,9 @@ diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
 cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], mean(VAR_nb)), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], mean(VAR_vol)), "%\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], mean(VAR_ratio)), "%", sep = "")
 
 # Example:
-
+## Difference between the two estimations of variance:
+##  - for the number of trees: 898.1975%
+##  - for the volume of trees: 543.8335%
+##  - for the ratio volume / number of trees: 59.77348%
 ```
 
