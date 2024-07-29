@@ -1,5 +1,5 @@
 ---
-title: "Monte Carlo and non-uniform bootstrap"
+title: "Another stratification"
 output: pdf_document
 date: "2024-07-29"
 ---
@@ -66,11 +66,12 @@ for (l in 0:((1000/c_dim)-1)) {
   while (x_init + 10*c_dim*k < 1000) {
     a <- runif(1, x_init + 10*c_dim*k, x_init + 10*c_dim*k + c_dim)
     b <- runif(1, l*c_dim, (l+1)*c_dim)
-    random_points <- rbind(random_points, list(a,b, l))
+    h <- nrow(random_points)%%100 # 100 strata
+    random_points <- rbind(random_points, list(a,b, h))
     k <- k+1
   }
 }
-colnames(random_points) <- list("x", "y", "line")
+colnames(random_points) <- list("x", "y", "Stratum")
 return(random_points)
 }
 ```
@@ -99,14 +100,14 @@ MonteCarlo <- function(n, B){
     df_grid <- sampling_grid(i,c_dim)
     a1 <- df_grid$x
     a2 <- df_grid$y
-    a3 <- df_grid$line
+    a3 <- df_grid$Stratum
     # n <- nrow(df_grid) # sample size
     # p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
     # Variables of interest derived from the sample
     var <- mapply(circle_all, a1, a2)
     MC_b <- data.frame(x = a1, y = a2, w = a3, z = t(var)[,1], t = t(var)[,2])
     MC_df <- cbind(MC_df, MC_b)
-    colnames(MC_df)[(5*(b-1)+2):(5*(b-1)+2+4)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("l", b, sep = ""), paste("nb", b, sep = ""), paste("vol", b, sep = ""))
+    colnames(MC_df)[(5*(b-1)+2):(5*(b-1)+2+4)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("h", b, sep = ""), paste("nb", b, sep = ""), paste("vol", b, sep = ""))
     est_b <- t(data.frame(x = sum(MC_df[5*(b-1)+2+3] /p), y = sum(MC_df[5*(b-1)+2+4] /p), z = (sum(MC_df[5*(b-1)+2+4] /p))/(sum(MC_df[5*(b-1)+2+3]/p))))
     MC_est <- cbind(MC_est, est_b)
     colnames(MC_est)[b+1] <- paste("ech", b, sep = "") 
@@ -156,7 +157,7 @@ f_boot <- function(df_sample, B){
   df_boot <- data.frame(useless = rep(0, nrow(df_sample)-10))
   for (b in 1:B) {
     nb <- sample(unique(df_sample[,3]), (length(unique(df_sample[,3]))-1), replace = TRUE)
-    # (H-1) lines at random
+    # (H-1) strata at random
     sample_b <- data.frame(x = numeric(), y = numeric(), z = numeric(), t = numeric(), w = numeric())
     for (number in nb){
       sample_b <- rbind(sample_b, df_sample[df_sample[,3] == number,])
@@ -209,10 +210,10 @@ MC_boot <- function(n, B1, B2){
     df_grid <- sampling_grid(i,c_dim)
     a1 <- df_grid$x
     a2 <- df_grid$y
-    a3 <- df_grid$line
+    a3 <- df_grid$Stratum
     var <- mapply(circle_all, a1, a2)
     df_b <- data.frame(x = a1, y = a2, w = a3, z = t(var)[,1], t = t(var)[,2])
-    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("l.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
+    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("h.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
     est_b <- t(data.frame(x = sum(df_b[4] /p), y = sum(df_b[5] /p), z = (sum(df_b[5] /p))/(sum(df_b[4]/p))))
     
     # Bootstrap iterations
