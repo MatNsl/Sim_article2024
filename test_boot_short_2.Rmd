@@ -121,9 +121,9 @@ est_boot <- function(df, p){
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (900/899)*sum(df[,4 + (5*(c-1))]/p))
-    vec_est2 <- append(vec_est2, (900/899)*sum(df[,5*c]/p))
-    vec_est3 <- append(vec_est3, ((900/899)*sum(df[,5*c]/p))/((900/899)*sum(df[,4 + (5*(c-1))]/p)))
+    vec_est1 <- append(vec_est1, (900/899)*sum(unlist(df[,4 + (5*(c-1))])/p))
+    vec_est2 <- append(vec_est2, (900/899)*sum(unlist(df[,5*c])/p))
+    vec_est3 <- append(vec_est3, ((900/899)*sum(unlist(df[,5*c])/p))/((900/899)*sum(unlist(df[,4 + (5*(c-1))])/p)))
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
