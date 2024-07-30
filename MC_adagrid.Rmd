@@ -213,7 +213,7 @@ MC_boot <- function(n, B1, B2){
     var <- mapply(circle_all, a1, a2)
     df_b <- data.frame(x = a1, y = a2, w = a3, z = t(var)[,1], t = t(var)[,2])
     colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("l.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
-    est_b <- t(data.frame(x = sum(df_b[4] /p), y = sum(df_b[5] /p), z = (sum(df_b[5] /p))/(sum(df_b[4]/p))))
+    est_b <- t(data.frame(x = (100/99)*sum(df_b[4] /p), y = (100/99)*sum(df_b[5] /p), z = (100/99)*(sum(df_b[5] /p))/(sum(df_b[4]/p))))
     
     # Bootstrap iterations
     df_boot <- f_boot(df_b, B2)
