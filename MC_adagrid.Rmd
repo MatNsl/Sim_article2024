@@ -181,9 +181,9 @@ est_boot <- function(df, p){
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,4 + (5*(c-1))]/p))
-    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,5*c]/p))
-    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,5*c]/p))/((n/(n-1))*sum(df[,4 + (5*(c-1))]/p)))
+    vec_est1 <- append(vec_est1, (100/99)*sum(df[,4 + (5*(c-1))]/p))
+    vec_est2 <- append(vec_est2, (100/99)*sum(df[,5*c]/p))
+    vec_est3 <- append(vec_est3, ((100/99)*sum(df[,5*c]/p))/((100/99)*sum(df[,4 + (5*(c-1))]/p)))
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
@@ -213,7 +213,7 @@ MC_boot <- function(n, B1, B2){
     var <- mapply(circle_all, a1, a2)
     df_b <- data.frame(x = a1, y = a2, w = a3, z = t(var)[,1], t = t(var)[,2])
     colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("l.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
-    est_b <- t(data.frame(x = (100/99)*sum(df_b[4] /p), y = (100/99)*sum(df_b[5] /p), z = (100/99)*(sum(df_b[5] /p))/(sum(df_b[4]/p))))
+    est_b <- t(data.frame(x = sum(df_b[4] /p), y = sum(df_b[5] /p), z = (sum(df_b[5] /p))/(sum(df_b[4]/p))))
     
     # Bootstrap iterations
     df_boot <- f_boot(df_b, B2)
