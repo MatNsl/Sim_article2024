@@ -90,14 +90,15 @@ f_boot <- function(df_sample, B){
   # df_sample: original sample; 
   # B: number of bootstrap samples made thanks to df_sample
   
-  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-10))
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-100))
   for (b in 1:B) {
     # nb <- sample(unique(df_sample[,3]), (length(unique(df_sample[,3]))-1), replace = TRUE)
     # (H-1) strata at random
     sample_b <- data.frame(x = numeric(), y = numeric(), z = numeric(), t = numeric(), w = numeric())
     for (number in unique(df_sample[,3])){
-      truc <- sample(df_sample[df_sample[,3] == number,], nrow(df_sample[df_sample[,3] == number,]) -1, replace = TRUE)
-      sample_b <- rbind(sample_b, truc)
+      truc <- sample(rownames(df_sample[df_sample[,3] == number,]), (nrow(df_sample[df_sample[,3] == number,])-1), replace = TRUE)
+      muche <- mapply(function(RRRRR){df_sample[rownames(df_sample) == RRRRR,]}, truc)
+      sample_b <- rbind(sample_b, t(muche))
       # sample_b <- rbind(sample_b, df_sample[df_sample[,3] == number,])
     }
     df_boot <- cbind(df_boot, sample_b)
