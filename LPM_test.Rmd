@@ -1,0 +1,35 @@
+---
+title: "LPM_test"
+output: pdf_document
+date: "2024-07-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+N <- 10000 # Number of small squares in the grid
+```
+
+```{r}
+vec <- runif(N, min = 0, max = 1) # initial vector pi
+```
+
+```{r}
+# LPM process
+new_vec <- rep(5, N)
+while(vec != truc){
+  i <- sample(1:10000, 1)
+  pi_i <- vec[i]
+  pi_j <- vec[(i+1)%%10000]
+  pi_w <- min(1,pi_i+pi_j)
+  pi_l <- pi_i+pi_j - pi_w
+  new_pi_i <- sample(c(pi_w, pi_l), 1, prob = c((pi_w - pi_j)/(pi_w - pi_l), (pi_w - pi_i)/(pi_w - pi_l)))
+  new_pi_j <- pi_w + pi_l - new_pi_i
+  new_vec[i] <- as.numeric((new_pi_i == 1) |  (new_pi_i == 0))*new_pi_i + as.numeric(xor((new_pi_i != 1),  (new_pi_i != 0)))*new_vec[i]
+  
+}
+```
+
+
