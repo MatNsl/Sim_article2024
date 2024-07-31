@@ -1,8 +1,9 @@
-# More than a test
+# A very similar function to the one in Inc_area.R
+# The only difference is that (x,y) is considered directly instead of coord (which was a vector containing x and y)
 
 inc_area <- function(x, y, x0F, y0F, x1F, y1F, r){
-  # x <- coord[1]
-  # y <- coord[2]
+  # x <- coord[1] # Useless step: x is an argument
+  # y <- coord[2] # Useless step: y is an argument
   
   ##### Case 1: the point is located s.t. the inclusion plot is completely inside the territory
   if ((x>=x0F+r) & (x<=x1F-r) & (y>=y0F+r) & (y<=y1F-r)){
