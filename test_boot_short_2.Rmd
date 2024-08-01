@@ -8,6 +8,9 @@ date: "2024-07-30"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Idea for the bootstrap: for each stratum $h$, containing $n_h$ sampled points, $n_h - 1$ points are sampled with replacement. As a result, $100(n_h-1)$ points are sampled from the initial sample. In this case, 900 points are sampled.
+
+
 The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees), variances of these estimators and confidence intervals. The same elements are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may verify the (in)validity of the bootstrap strategy to find the estimation of the variances.
 
 
@@ -121,10 +124,10 @@ est_boot <- function(df, p){
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (900/899)*sum(unlist(df[,4 + (5*(c-1))])/p))
-    vec_est2 <- append(vec_est2, (900/899)*sum(unlist(df[,5*c])/p))
-    vec_est3 <- append(vec_est3, ((900/899)*sum(unlist(df[,5*c])/p))/((900/899)*sum(unlist(df[,4 + (5*(c-1))])/p)))
-    # (n/(n-1)) is the correction needed since we choose only (n-1) points
+    vec_est1 <- append(vec_est1, (900/9)*sum(unlist(df[,4 + (5*(c-1))])/p))
+    vec_est2 <- append(vec_est2, (900/9)*sum(unlist(df[,5*c])/p))
+    vec_est3 <- append(vec_est3, ((900/9)*sum(unlist(df[,5*c])/p))/((900/9)*sum(unlist(df[,4 + (5*(c-1))])/p)))
+    # (n_h/(n_h-1))*(n/n_h) is the correction needed since we choose only (n_h-1) points per strata
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
   return(vec_est)
@@ -205,6 +208,18 @@ MC_boot <- function(n, B1, B2){
 start.time <- Sys.time()
 
 res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+start.time <- Sys.time()
+
+res2 <- MC_boot(n, B1 = 10, B2 = 4)
 # Just one circle to begin with
 
 end.time <- Sys.time()
