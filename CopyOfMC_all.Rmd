@@ -1,0 +1,412 @@
+---
+title: "Monte Carlo and bootstrap for all parameters"
+output: pdf_document
+date: "2024-07-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees), variances of these estimators and confidence intervals. The same elements are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances.
+
+
+In this document, uniform sampling is used to create a sample and one single circle with a radius of 5 is used to compute local variables.
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+all_trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+# To get closer to the NFI process, trees whose circumference is under 23.5 cm are not considered
+trees <- all_trees[(pi*all_trees$d130 > 23.5),]
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
+# Sample size
+n <- 1000
+```
+
+```{r}
+# True values
+cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees))
+```
+
+# Monte Carlo alone
+
+10 000 Monte Carlo iterations are appropriated.
+
+```{r}
+### Function to automate Monte Carlo method
+
+MonteCarlo <- function(n, B){
+  # n: sample size;
+  # B: number of iterations for MC
+  
+  p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
+  
+  MC_df <- data.frame(useless = rep(0, n))
+  MC_est <- data.frame(useless = rep(0, 3), row.names = c("est_nb", "est_vol", "est_ratio"))
+  
+  for (b in 1:B) { # All in one "for" loop
+    # Uniform sampling over the whole territory
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
+    # Variables of interest derived from the sample
+    var <- mapply(circle_all, a1, a2)
+    MC_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
+    MC_df <- cbind(MC_df, MC_b)
+    colnames(MC_df)[(4*(b-1)+2):(4*(b-1)+2+3)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("nb", b, sep = ""), paste("vol", b, sep = ""))
+    est_b <- t(data.frame(x = sum(MC_df[4*(b-1)+2+2] /p), y = sum(MC_df[4*(b-1)+2+3] /p), z = (sum(MC_df[4*(b-1)+2+3] /p))/(sum(MC_df[4*(b-1)+2+2]/p))))
+    MC_est <- cbind(MC_est, est_b)
+    colnames(MC_est)[b+1] <- paste("ech", b, sep = "") 
+  }
+  MC_df$useless <- NULL
+  MC_est$useless <- NULL
+  MC_var <- c(var(as.vector(t(MC_est[1,]))), var(as.vector(t(MC_est[2,]))), var(as.vector(t(MC_est[3,]))))
+  
+  return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var))
+  # Local Variables: local variables (number and volume) for each point in each sample
+  # Estimations: 3 Estimations (number, volume, ratio volume / number) for each sample
+  # Variances: Monte Carlo variance for each of the totals / ratio
+}
+```
+
+# Bootstrap for each Monte Carlo iteration
+
+1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; 
+  # B: number of bootstrap samples made thanks to df_sample
+  
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
+  for (b in 1:B) {
+    nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
+    # (n-1) points at random
+    sample_b <- df_sample[nb,]
+    df_boot <- cbind(df_boot, sample_b)
+    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
+  }
+  df_boot$useless <- NULL
+  return(df_boot)
+  # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
+}
+```
+
+```{r}
+# Making of estimations for each sample made by the bootstrap method
+est_boot <- function(df, p){
+  # df: dataframe with 4*B columns and n rows
+  
+  n <- nrow(df) + 1 # sample size of the initial sample
+  nboot <- length(df)/4 # number of bootstrap samples
+  vec_est1 <- c()
+  vec_est2 <- c()
+  vec_est3 <- c()
+  for (c in 1:nboot) {
+    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + (4*(c-1))]/p))
+    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,4*c]/p))
+    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,4*c]/p))/((n/(n-1))*sum(df[,3 + (4*(c-1))]/p)))
+    # (n/(n-1)) is the correction needed since we choose only (n-1) points
+  }
+  vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
+  return(vec_est)
+  # Data frame with 3 estimations for each sample
+}
+```
+
+```{r}
+### Function to automate Monte Carlo + bootstrap method
+
+MC_boot <- function(n, B1, B2){
+  # n: sample size;
+  # B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap
+  
+  p <- sum(rep((1/1000)*(1/1000), n))
+  BOOT_df <- list() # All local variables
+  BOOT_est <- list() # All estimations
+  BOOT_var <- list() # Variances
+  BOOT_CI <- list() # Confidence Intervals
+  for (b in 1:B1) { # One MC iteration at a time
+    # Uniform sampling over the whole territory
+    a1 <- runif(n, 0, 1000)
+    a2 <- runif(n, 0, 1000)
+    var <- mapply(circle_all, a1, a2)
+    df_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
+    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
+    est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
+    
+    # Bootstrap iterations
+    df_boot <- f_boot(df_b, B2)
+    est_boot_val <- est_boot(df_boot, p)
+    
+    BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
+    names(BOOT_var)[b] <- paste("Variance", b, sep = "")
+    BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
+    names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
+    BOOT_est <- c(BOOT_est, list(est_init_b = est_b, est_boot_b = est_boot_val))
+    names(BOOT_est)[(2*b-1):(2*b)] <- c(paste("est_MC", b, sep = ""), paste("est_boot", b, sep = ""))
+    
+    # Confidence intervals
+    norm_CI <- data.frame(useless = rep(0, 2))
+    perc_CI <- data.frame(useless = rep(0, 2))
+    rev_perc_CI <- data.frame(useless = rep(0, 2))
+    for (l in 1:3) { # Loop: one estimator each time
+      sorted_est <- sort(est_boot_val[,l])
+      lim_inf <- sorted_est[floor(B2*2.5/100)]
+      lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
+      perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
+      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l,]*2 - lim_sup, est_b[l,]*2 - lim_inf)))
+      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l,]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l,]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
+    }
+    norm_CI$useless <- NULL
+    perc_CI$useless <- NULL
+    rev_perc_CI$useless <- NULL
+    colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
+    # BOOT_CI <- c(BOOT_CI, CI_b = all_CI)
+    BOOT_CI[[b]] <- all_CI
+    names(BOOT_CI)[b] <- paste("CI", b, sep = "")
+  }
+  return(list(`Local Variables` = BOOT_df, Estimations = BOOT_est, Variances = BOOT_var, `Confidence Intervals` = BOOT_CI))
+  # Local Variables: local variables (number and volume) for each point in each sample
+  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
+  # Variances: mean of the bootstrap variance for each estimator
+  # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
+}
+```
+
+# Example
+
+## Monte Carlo alone
+
+```{r}
+start.time <- Sys.time()
+
+res1 <- MonteCarlo(n, 10000)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(t(res1$Estimations[1,]))), "\n - for the volume of trees:", mean(as.vector(t(res1$Estimations[2,]))), "\n - for the ratio volume / number of trees:", mean(as.vector(t(res1$Estimations[3,]))))
+
+# Example:
+## Monte Carlo means of estimations:
+##  - for the number of trees: 29251.69
+##  - for the volume of trees: 5407.967
+##  - for the ratio volume / number of trees: 0.184873
+```
+
+```{r}
+cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[2], "\n - for the ratio volume / number of trees:", res1$Variances[3])
+
+# Example:
+## Monte Carlo variances:
+##  - for the number of trees: 2604340
+##  - for the volume of trees: 99936.6
+##  - for the ratio volume / number of trees: 1.122037e-05
+```
+
+## Monte Carlo and bootstrap
+
+```{r}
+start.time <- Sys.time()
+
+res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+# We want all the variances obtained for each parameter of interest, 
+# to find the mean for each of these series
+EST_nb <- c()
+EST_vol <- c()
+EST_ratio <- c()
+for (elt in res2$Estimations) {
+  if ("data.frame" %in% class(elt)){ # we target bootstrap samples made from each MC iteration
+    EST_nb <- append(EST_nb, mean(elt$est_nb))
+    EST_vol <- append(EST_vol, mean(elt$est_vol))
+    EST_ratio <- append(EST_ratio, mean(elt$est_ratio))
+  }
+}
+```
+
+```{r}
+cat("Mean of the means of estimations obtained through each bootstrap process:\n - for the number of trees:", mean(EST_nb), "\n - for the volume of trees:", mean(EST_vol), "\n - for the ratio volume / number of trees:", mean(EST_ratio))
+
+# Example:
+## Mean of the means of estimations obtained through each bootstrap process:
+##  - for the number of trees: 29280.52
+##  - for the volume of trees: 5411.916
+##  - for the ratio volume / number of trees: 0.1848212
+```
+
+```{r}
+# We want all the variances obtained for each parameter of interest, 
+# to find the mean for each of these series
+VAR_nb <- c()
+VAR_vol <- c()
+VAR_ratio <- c()
+for (elt in res2$Variances) {
+  VAR_nb <- append(VAR_nb, elt$var_nb)
+  VAR_vol <- append(VAR_vol, elt$var_vol)
+  VAR_ratio <- append(VAR_ratio, elt$var_ratio)
+}
+```
+
+```{r}
+cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(VAR_nb), "\n - for the volume of trees:", mean(VAR_vol), "\n - for the ratio volume / number of trees:", mean(VAR_ratio))
+
+# Example:
+## Mean of the variance of bootstrap samples:
+##  - for the number of trees: 2562574
+##  - for the volume of trees: 98333.62
+##  - for the ratio volume / number of trees: 1.121868e-05
+```
+
+```{r}
+## We want all the CI based on Normal distribution obtained for each parameter of interest, 
+# to find the coverage rate
+CI_nb <- data.frame(useless = c(0,0))
+CI_vol <- data.frame(useless = c(0,0))
+CI_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_nb <- cbind(CI_nb, elt$Normal$lim_nb)
+  CI_vol <- cbind(CI_vol, elt$Normal$lim_vol)
+  CI_ratio <- cbind(CI_ratio, elt$Normal$lim_ratio)
+}
+CI_nb$useless <- NULL
+CI_vol$useless <- NULL
+CI_ratio$useless <- NULL
+
+CI_nb <- as.data.frame(t(CI_nb))
+rownames(CI_nb) <- 1:(nrow(CI_nb))
+colnames(CI_nb) <- c("x", "y")
+
+CI_vol <- as.data.frame(t(CI_vol))
+rownames(CI_vol) <- 1:(nrow(CI_vol))
+colnames(CI_vol) <- c("x", "y")
+
+CI_ratio <- as.data.frame(t(CI_ratio))
+rownames(CI_ratio) <- 1:(nrow(CI_ratio))
+colnames(CI_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb$x, CI_nb$y) )
+TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol$x, CI_vol$y) )
+TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio$x, CI_ratio$y) )
+cat("Concerning the normal approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+```{r}
+## We want all the Percentile CI obtained for each parameter of interest, 
+# to find the coverage rate
+CI_perc_nb <- data.frame(useless = c(0,0))
+CI_perc_vol <- data.frame(useless = c(0,0))
+CI_perc_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_perc_nb <- cbind(CI_perc_nb, elt$Percentile$lim_nb)
+  CI_perc_vol <- cbind(CI_perc_vol, elt$Percentile$lim_vol)
+  CI_perc_ratio <- cbind(CI_perc_ratio, elt$Percentile$lim_ratio)
+}
+CI_perc_nb$useless <- NULL
+CI_perc_vol$useless <- NULL
+CI_perc_ratio$useless <- NULL
+
+CI_perc_nb <- as.data.frame(t(CI_perc_nb))
+rownames(CI_perc_nb) <- 1:(nrow(CI_perc_nb))
+colnames(CI_perc_nb) <- c("x", "y")
+
+CI_perc_vol <- as.data.frame(t(CI_perc_vol))
+rownames(CI_perc_vol) <- 1:(nrow(CI_perc_vol))
+colnames(CI_perc_vol) <- c("x", "y")
+
+CI_perc_ratio <- as.data.frame(t(CI_perc_ratio))
+rownames(CI_perc_ratio) <- 1:(nrow(CI_perc_ratio))
+colnames(CI_perc_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_perc_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_perc_nb$x, CI_perc_nb$y) )
+TC_vol <- (1/nrow(CI_perc_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_perc_vol$x, CI_perc_vol$y) )
+TC_ratio <- (1/nrow(CI_perc_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_perc_ratio$x, CI_perc_ratio$y) )
+cat("Concerning the percentile approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+```{r}
+## We want all the Reverse Percentile CI obtained for each parameter of interest, 
+# to find the coverage rate
+CI_nb <- data.frame(useless = c(0,0))
+CI_vol <- data.frame(useless = c(0,0))
+CI_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_nb <- cbind(CI_nb, elt$`Reverse percentile`$lim_nb)
+  CI_vol <- cbind(CI_vol, elt$`Reverse percentile`$lim_vol)
+  CI_ratio <- cbind(CI_ratio, elt$`Reverse percentile`$lim_ratio)
+}
+CI_nb$useless <- NULL
+CI_vol$useless <- NULL
+CI_ratio$useless <- NULL
+
+CI_nb <- as.data.frame(t(CI_nb))
+rownames(CI_nb) <- 1:(nrow(CI_nb))
+colnames(CI_nb) <- c("x", "y")
+
+CI_vol <- as.data.frame(t(CI_vol))
+rownames(CI_vol) <- 1:(nrow(CI_vol))
+colnames(CI_vol) <- c("x", "y")
+
+CI_ratio <- as.data.frame(t(CI_ratio))
+rownames(CI_ratio) <- 1:(nrow(CI_ratio))
+colnames(CI_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb$x, CI_nb$y) )
+TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol$x, CI_vol$y) )
+TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio$x, CI_ratio$y) )
+cat("Concerning the reverse percentile approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+## Comparison of the variances
+
+```{r}
+diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
+cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], mean(VAR_nb)), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], mean(VAR_vol)), "%\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], mean(VAR_ratio)), "%", sep = "")
+
+# Example:
+## Difference between the two estimations of variance:
+##  - for the number of trees: 1.629866%
+##  - for the volume of trees: 1.630143%
+##  - for the ratio volume / number of trees: 0.01505727%
+```
