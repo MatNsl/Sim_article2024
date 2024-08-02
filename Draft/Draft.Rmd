@@ -879,4 +879,117 @@ for (elt in res2$Variances) {
   VAR_ratio <- append(VAR_ratio, elt$var_ratio)
 }
 
+## Non-optimal version of coverage rates in MC_all.Rmd ----------
+
+```{r}
+## We want all the CI based on Normal distribution obtained for each parameter of interest, 
+# to find the coverage rate
+CI_nb <- data.frame(useless = c(0,0))
+CI_vol <- data.frame(useless = c(0,0))
+CI_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_nb <- cbind(CI_nb, elt$Normal$lim_nb)
+  CI_vol <- cbind(CI_vol, elt$Normal$lim_vol)
+  CI_ratio <- cbind(CI_ratio, elt$Normal$lim_ratio)
+}
+CI_nb$useless <- NULL
+CI_vol$useless <- NULL
+CI_ratio$useless <- NULL
+
+CI_nb <- as.data.frame(t(CI_nb))
+rownames(CI_nb) <- 1:(nrow(CI_nb))
+colnames(CI_nb) <- c("x", "y")
+
+CI_vol <- as.data.frame(t(CI_vol))
+rownames(CI_vol) <- 1:(nrow(CI_vol))
+colnames(CI_vol) <- c("x", "y")
+
+CI_ratio <- as.data.frame(t(CI_ratio))
+rownames(CI_ratio) <- 1:(nrow(CI_ratio))
+colnames(CI_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb$x, CI_nb$y) )
+TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol$x, CI_vol$y) )
+TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio$x, CI_ratio$y) )
+cat("Concerning the normal approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+
+
+```{r}
+## We want all the Percentile CI obtained for each parameter of interest, 
+# to find the coverage rate
+CI_perc_nb <- data.frame(useless = c(0,0))
+CI_perc_vol <- data.frame(useless = c(0,0))
+CI_perc_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_perc_nb <- cbind(CI_perc_nb, elt$Percentile$lim_nb)
+  CI_perc_vol <- cbind(CI_perc_vol, elt$Percentile$lim_vol)
+  CI_perc_ratio <- cbind(CI_perc_ratio, elt$Percentile$lim_ratio)
+}
+CI_perc_nb$useless <- NULL
+CI_perc_vol$useless <- NULL
+CI_perc_ratio$useless <- NULL
+
+CI_perc_nb <- as.data.frame(t(CI_perc_nb))
+rownames(CI_perc_nb) <- 1:(nrow(CI_perc_nb))
+colnames(CI_perc_nb) <- c("x", "y")
+
+CI_perc_vol <- as.data.frame(t(CI_perc_vol))
+rownames(CI_perc_vol) <- 1:(nrow(CI_perc_vol))
+colnames(CI_perc_vol) <- c("x", "y")
+
+CI_perc_ratio <- as.data.frame(t(CI_perc_ratio))
+rownames(CI_perc_ratio) <- 1:(nrow(CI_perc_ratio))
+colnames(CI_perc_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_perc_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_perc_nb$x, CI_perc_nb$y) )
+TC_vol <- (1/nrow(CI_perc_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_perc_vol$x, CI_perc_vol$y) )
+TC_ratio <- (1/nrow(CI_perc_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_perc_ratio$x, CI_perc_ratio$y) )
+cat("Concerning the percentile approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+```{r}
+## We want all the Reverse Percentile CI obtained for each parameter of interest, 
+# to find the coverage rate
+CI_nb <- data.frame(useless = c(0,0))
+CI_vol <- data.frame(useless = c(0,0))
+CI_ratio <- data.frame(useless = c(0,0))
+for (elt in res2$`Confidence Intervals`) {
+  CI_nb <- cbind(CI_nb, elt$`Reverse percentile`$lim_nb)
+  CI_vol <- cbind(CI_vol, elt$`Reverse percentile`$lim_vol)
+  CI_ratio <- cbind(CI_ratio, elt$`Reverse percentile`$lim_ratio)
+}
+CI_nb$useless <- NULL
+CI_vol$useless <- NULL
+CI_ratio$useless <- NULL
+
+CI_nb <- as.data.frame(t(CI_nb))
+rownames(CI_nb) <- 1:(nrow(CI_nb))
+colnames(CI_nb) <- c("x", "y")
+
+CI_vol <- as.data.frame(t(CI_vol))
+rownames(CI_vol) <- 1:(nrow(CI_vol))
+colnames(CI_vol) <- c("x", "y")
+
+CI_ratio <- as.data.frame(t(CI_ratio))
+rownames(CI_ratio) <- 1:(nrow(CI_ratio))
+colnames(CI_ratio) <- c("x", "y")
+```
+
+```{r}
+# Check the coverage rate
+TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb$x, CI_nb$y) )
+TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol$x, CI_vol$y) )
+TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio$x, CI_ratio$y) )
+cat("Concerning the reverse percentile approach, the coverage rate are the following: \n - for the number of trees: ", TC_nb, "\n - for the volume of trees: ", TC_vol, "\n - for the ratio volume / number of trees: ", TC_ratio)
+```
+
+
 
