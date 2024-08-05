@@ -1120,3 +1120,61 @@ time.taken <- end.time - start.time
 time.taken
 ```
 
+## Plots ----------
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+
+# Setup the data
+m <- matrix(c(8,3,4,1,5,9,6,7,2), nrow=3, ncol=3)
+df <- expand.grid(x=1:ncol(m),y=1:nrow(m))
+df$val <- m[as.matrix(df[c('y','x')])]
+
+library(ggplot2)
+library(scales)
+test <- ggplot(df, aes(x=x, y=y, label=val)) + 
+  geom_tile(fill='transparent', colour = 'black') + 
+  geom_text(size = 14) + 
+  scale_y_reverse() +
+  theme_classic() + 
+  theme(axis.text  = element_blank(),
+        panel.grid = element_blank(),
+        axis.line  = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+plot(test)
+```
+
+```{r}
+# Create a data frame with the coordinates and colors
+grid_data <- expand.grid(x = 1:10, y = 1:10)  # 10x10 grid
+grid_data$color <- "white"  # Default color for all squares
+
+# Specify the squares to be colored
+colored_squares <- data.frame(
+  x = c(2, 4, 6, 8),
+  y = c(3, 5, 7, 9),
+  color = c("red", "blue", "green", "yellow")
+)
+
+# Merge the colored squares into the grid data
+grid_data <- merge(grid_data, colored_squares, by = c("x", "y"), all.x = TRUE)
+grid_data$color.y[is.na(grid_data$color.y)] <- "white" # Set NA colors to white
+# c(rep("white", 100))
+
+ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
+  geom_tile(colour = "black") +  # Draw the squares with black borders # 
+  scale_fill_identity() +  # Use the colors specified in the data
+  theme_minimal() +  # Minimal theme for better visualization
+  theme(
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove grid lines
+  ) +
+  coord_fixed()  # Ensure squares are not stretched
+```
+
+
