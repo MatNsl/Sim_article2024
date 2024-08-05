@@ -993,3 +993,130 @@ cat("Concerning the reverse percentile approach, the coverage rate are the follo
 
 
 
+# Old version of tes_boot_short_2.Rmd (strata different from lines)
+
+
+```{r}
+f_boot <- function(df_sample, B){
+  # df_sample: original sample; 
+  # B: number of bootstrap samples made thanks to df_sample
+  
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-100))
+  for (b in 1:B) {
+    # nb <- sample(unique(df_sample[,3]), (length(unique(df_sample[,3]))-1), replace = TRUE)
+    # (H-1) strata at random
+    sample_b <- data.frame(x = numeric(), y = numeric(), z = numeric(), t = numeric(), w = numeric())
+    for (number in unique(df_sample[,3])){
+      truc <- sample(rownames(df_sample[df_sample[,3] == number,]), (nrow(df_sample[df_sample[,3] == number,])-1), replace = TRUE)
+      muche <- mapply(function(RRRRR){df_sample[rownames(df_sample) == RRRRR,]}, truc)
+      sample_b <- rbind(sample_b, t(muche))
+      # sample_b <- rbind(sample_b, df_sample[df_sample[,3] == number,])
+    }
+    df_boot <- cbind(df_boot, sample_b)
+    colnames(df_boot)[((b-1)*5+1 + 1):(b*5+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""), paste("ech", b, colnames(df_sample)[5], sep = ""))
+  }
+  df_boot$useless <- NULL
+  return(df_boot)
+  # Return a data frame with B samples of as many variables as we want (in this application, 5)
+}
+```
+
+```{r}
+# Making of estimations for each sample made by the bootstrap method
+est_boot <- function(df, p){
+  # df: dataframe with 5*B columns and n rows
+  
+  n <- nrow(df) + 1 # sample size of the initial sample
+  nboot <- length(df)/5 # number of bootstrap samples
+  vec_est1 <- c()
+  vec_est2 <- c()
+  vec_est3 <- c()
+  for (c in 1:nboot) {
+    vec_est1 <- append(vec_est1, (900/9)*sum(unlist(df[,4 + (5*(c-1))])/p))
+    vec_est2 <- append(vec_est2, (900/9)*sum(unlist(df[,5*c])/p))
+    vec_est3 <- append(vec_est3, ((900/9)*sum(unlist(df[,5*c])/p))/((900/9)*sum(unlist(df[,4 + (5*(c-1))])/p)))
+    # (n_h/(n_h-1))*(n/n_h) is the correction needed since we choose only (n_h-1) points per strata
+  }
+  vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
+  return(vec_est)
+  # Data frame with 3 estimations for each sample
+}
+```
+
+```{r}
+### Function to automate Monte Carlo + bootstrap method
+
+MC_boot <- function(n, B1, B2){
+  # B1: number of iterations for MC;
+  # B2: number of iterations for bootstrap
+  
+  p <- sum(rep((1/1000)*(1/1000), n))
+  BOOT_df <- list() # All local variables
+  BOOT_est <- list() # All estimations
+  BOOT_var <- list() # Variances
+  BOOT_CI <- list() # Confidence Intervals
+  for (b in 1:B1) { # One MC iteration at a time
+    # Uniform sampling over the whole territory
+    df_grid <- sampling_grid(i,c_dim)
+    a1 <- df_grid$x
+    a2 <- df_grid$y
+    a3 <- df_grid$Stratum
+    var <- mapply(circle_all, a1, a2)
+    df_b <- data.frame(x = a1, y = a2, w = a3, z = t(var)[,1], t = t(var)[,2])
+    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("h.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
+    est_b <- t(data.frame(x = sum(df_b[4] /p), y = sum(df_b[5] /p), z = (sum(df_b[5] /p))/(sum(df_b[4]/p))))
+    
+    # Bootstrap iterations
+    df_boot <- f_boot(df_b, B2)
+    est_boot_val <- est_boot(df_boot, p)
+    
+    BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
+    names(BOOT_var)[b] <- paste("Variance", b, sep = "")
+    BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
+    names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
+    BOOT_est <- c(BOOT_est, list(est_init_b = est_b, est_boot_b = est_boot_val))
+    names(BOOT_est)[(2*b-1):(2*b)] <- c(paste("est_MC", b, sep = ""), paste("est_boot", b, sep = ""))
+    
+    # Confidence intervals
+    norm_CI <- data.frame(useless = rep(0, 2))
+    perc_CI <- data.frame(useless = rep(0, 2))
+    rev_perc_CI <- data.frame(useless = rep(0, 2))
+    for (l in 1:3) { # Loop: one estimator each time
+      sorted_est <- sort(est_boot_val[,l])
+      lim_inf <- sorted_est[floor(B2*2.5/100)]
+      lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
+      perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
+      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l,]*2 - lim_sup, est_b[l,]*2 - lim_inf)))
+      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l,]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l,]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
+    }
+    norm_CI$useless <- NULL
+    perc_CI$useless <- NULL
+    rev_perc_CI$useless <- NULL
+    colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
+    # BOOT_CI <- c(BOOT_CI, CI_b = all_CI)
+    BOOT_CI[[b]] <- all_CI
+    names(BOOT_CI)[b] <- paste("CI", b, sep = "")
+  }
+  return(list(`Local Variables` = BOOT_df, Estimations = BOOT_est, Variances = BOOT_var, `Confidence Intervals` = BOOT_CI))
+  # Local Variables: local variables (number and volume) for each point in each sample
+  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
+  # Variances: mean of the bootstrap variance for each estimator
+  # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
+}
+```
+
+```{r}
+start.time <- Sys.time()
+
+res2 <- MC_boot(n, B1 = 10, B2 = 4)
+# Just one circle to begin with
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+

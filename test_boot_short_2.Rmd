@@ -1,7 +1,7 @@
 ---
 title: "Testing bootstrap processes"
 output: pdf_document
-date: "2024-07-30"
+date: "2024-08-05"
 ---
 
 ```{r setup, include=FALSE}
@@ -95,21 +95,18 @@ f_boot <- function(df_sample, B){
   
   df_boot <- data.frame(useless = rep(0, nrow(df_sample)-100))
   for (b in 1:B) {
-    # nb <- sample(unique(df_sample[,3]), (length(unique(df_sample[,3]))-1), replace = TRUE)
-    # (H-1) strata at random
     sample_b <- data.frame(x = numeric(), y = numeric(), z = numeric(), t = numeric(), w = numeric())
     for (number in unique(df_sample[,3])){
-      truc <- sample(rownames(df_sample[df_sample[,3] == number,]), (nrow(df_sample[df_sample[,3] == number,])-1), replace = TRUE)
-      muche <- mapply(function(RRRRR){df_sample[rownames(df_sample) == RRRRR,]}, truc)
-      sample_b <- rbind(sample_b, t(muche))
-      # sample_b <- rbind(sample_b, df_sample[df_sample[,3] == number,])
+      names_h <- sample(rownames(df_sample[df_sample[,3] == number,]), (nrow(df_sample[df_sample[,3] == number,])-1), replace = TRUE)
+      sample_h <- mapply(function(some_names){df_sample[rownames(df_sample) == some_names,]}, names_h)
+      sample_b <- rbind(sample_b, t(sample_h))
     }
     df_boot <- cbind(df_boot, sample_b)
     colnames(df_boot)[((b-1)*5+1 + 1):(b*5+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""), paste("ech", b, colnames(df_sample)[5], sep = ""))
   }
   df_boot$useless <- NULL
   return(df_boot)
-  # Return a data frame with B samples of as many variables as we want (in this application, 5)
+  # Return a data frame with B samples of 5 variables
 }
 ```
 
@@ -118,15 +115,15 @@ f_boot <- function(df_sample, B){
 est_boot <- function(df, p){
   # df: dataframe with 5*B columns and n rows
   
-  n <- nrow(df) + 1 # sample size of the initial sample
+  n <- nrow(df) + 100 # sample size of the initial sample
   nboot <- length(df)/5 # number of bootstrap samples
   vec_est1 <- c()
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (900/9)*sum(unlist(df[,4 + (5*(c-1))])/p))
-    vec_est2 <- append(vec_est2, (900/9)*sum(unlist(df[,5*c])/p))
-    vec_est3 <- append(vec_est3, ((900/9)*sum(unlist(df[,5*c])/p))/((900/9)*sum(unlist(df[,4 + (5*(c-1))])/p)))
+    vec_est1 <- append(vec_est1, (1/100)*(1000/9)*sum(as.vector(unlist(df[,4 + (5*(c-1))]))/p))
+    vec_est2 <- append(vec_est2, (1/100)*(1000/9)*sum(as.vector(unlist(df[,5*c]))/p))
+    vec_est3 <- append(vec_est3, ((1000/9)*sum(as.vector(unlist(df[,5*c])/p)))/((1000/9)*sum(as.vector(unlist(df[,4 + (5*(c-1))]))/p)))
     # (n_h/(n_h-1))*(n/n_h) is the correction needed since we choose only (n_h-1) points per strata
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
@@ -168,6 +165,7 @@ MC_boot <- function(n, B1, B2){
     names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
     BOOT_est <- c(BOOT_est, list(est_init_b = est_b, est_boot_b = est_boot_val))
     names(BOOT_est)[(2*b-1):(2*b)] <- c(paste("est_MC", b, sep = ""), paste("est_boot", b, sep = ""))
+    est_b <- as.vector(est_b)
     
     # Confidence intervals
     norm_CI <- data.frame(useless = rep(0, 2))
@@ -178,8 +176,8 @@ MC_boot <- function(n, B1, B2){
       lim_inf <- sorted_est[floor(B2*2.5/100)]
       lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
       perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
-      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l,]*2 - lim_sup, est_b[l,]*2 - lim_inf)))
-      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l,]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l,]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
+      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l]*2 - lim_sup, est_b[l]*2 - lim_inf)))
+      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
     }
     norm_CI$useless <- NULL
     perc_CI$useless <- NULL
@@ -208,18 +206,6 @@ MC_boot <- function(n, B1, B2){
 start.time <- Sys.time()
 
 res2 <- MC_boot(n, B1 = 1000, B2 = 400)
-# Just one circle to begin with
-
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-
-time.taken
-```
-
-```{r}
-start.time <- Sys.time()
-
-res2 <- MC_boot(n, B1 = 10, B2 = 4)
 # Just one circle to begin with
 
 end.time <- Sys.time()
