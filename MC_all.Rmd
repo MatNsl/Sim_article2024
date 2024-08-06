@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
 
 
-In this document, *uniform sampling* is used to create a sample and *one single circle* with a radius of 5 is used to compute local variables.
+In this document, \textbf{uniform sampling} is used to create a sample and \textbf{one single circle} with a radius of 5 is used to compute local variables.
 
 ```{r}
 library(readxl) # to read the initial file
@@ -95,49 +95,31 @@ MonteCarlo <- function(n, B){
 # Adapted for our particular problem
 bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
                      c(.025,.975)) { 
-    # n <- nrow(x)
-    # a <- mapply(theta, x[, 1], x[, 2])
-    # Estimated total thus obtained from the initial sample
-    # thetahat <- sum(a/p)
+    # df_init: initial sample
+    # est_init: estimation made thanks to the initial sample
+    # est_boot_val: estimations made thanks to bootstrap samples
+    # p: inclusion density
     
     nboot <- nrow(est_boot_val)
-    # thetastar <- c()
-    # for (c in 1:B) {
-    #   a <- mapply(theta, est_boot[, (2*c)-1], est_boot[, 2*c])
-    #   thetastar <- append(thetastar, sum(a/p))
-    # }
     thetastar <- as.data.frame(mapply(sort, est_boot_val))
     
     z0 <- mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
     
-    # z0 <- qnorm(sum(thetastar<thetahat)/nboot)
-    
     u <- data.frame(x = numeric(), y = numeric())
     for(i in 1:n){
         x_i <- df_init[-i,]
-        # a <- c()
-        # for (j in 1:(n-1)) {
-        #   a <- append(a, theta(x_i[j, 1], x_i[j, 2]))
-        # }
         u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
     }
     u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
-    # uu <- mean(u)-u
     acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
-    # acc <- sum(uu*uu*uu)/(6*(sum(uu*uu))^1.5)
     
     zalpha <- qnorm(alpha)
     
     tt <- as.data.frame( mapply(function(z0, acc){pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))}, z0, acc) )
-    # tt <- pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))
     
     confpoints <- as.data.frame( mapply(function(tt, thetastar){quantile(x=thetastar,probs=tt,type=1)}, tt, thetastar) )
-    # confpoints <- quantile(x=thetastar,probs=tt,type=1)
-    # confpoints <- quantile(x=thetastar,probs=tt,type=1)
     rownames(confpoints) <- NULL
-    # confpoints <- cbind(alpha,confpoints)
-    # dimnames(confpoints)[[2]] <- c("alpha","bca point")
     return(confpoints)
 }
 ```
@@ -433,6 +415,18 @@ cat("Concerning the percentile approach, the coverage rates are the following: \
     TC_rev_perc[1,3], "\n - for the volume of trees: ", TC_rev_perc[2,3], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,3],
     " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
     TC_rev_perc[1,4], "\n - for the volume of trees: ", TC_rev_perc[2,4], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,4])
+```
+
+```{r}
+TC_bca <- coverage_rate(4)
+cat("Concerning the BCa approach, the coverage rates are the following: \n - for the number of trees: ", 
+    TC_bca[1,1], "\n - for the volume of trees: ", TC_bca[2,1], "\n - for the ratio volume / number of trees: ", TC_bca[3,1],
+    " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
+    TC_bca[1,2], "\n - for the volume of trees: ", TC_bca[2,2], "\n - for the ratio volume / number of trees: ", TC_bca[3,2],
+    " \n\nThe parts of the estimators over the upper limit of the coverage rate are the following: \n - for the number of trees: ",
+    TC_bca[1,3], "\n - for the volume of trees: ", TC_bca[2,3], "\n - for the ratio volume / number of trees: ", TC_bca[3,3],
+    " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
+    TC_bca[1,4], "\n - for the volume of trees: ", TC_bca[2,4], "\n - for the ratio volume / number of trees: ", TC_bca[3,4])
 ```
 
 ## Comparison of the variances
