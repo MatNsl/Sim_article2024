@@ -89,6 +89,65 @@ MonteCarlo <- function(n, B){
 1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
 
 ```{r}
+## BCa nonparametric
+# Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
+# Function explained in Efron and Tibshirani (1993)
+# Adapted for our particular problem
+bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
+                     c(.025,.975)) { 
+    # n <- nrow(x)
+    # a <- mapply(theta, x[, 1], x[, 2])
+    # Estimated total thus obtained from the initial sample
+    # thetahat <- sum(a/p)
+    
+    nboot <- nrow(est_boot_val)
+    # thetastar <- c()
+    # for (c in 1:B) {
+    #   a <- mapply(theta, est_boot[, (2*c)-1], est_boot[, 2*c])
+    #   thetastar <- append(thetastar, sum(a/p))
+    # }
+    thetastar <- as.data.frame(mapply(sort, est_boot_val))
+    
+    z0 <- mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
+    
+    # z0 <- qnorm(sum(thetastar<thetahat)/nboot)
+    
+    u <- data.frame(x = numeric(), y = numeric())
+    for(i in 1:n){
+        x_i <- df_init[-i,]
+        # a <- c()
+        # for (j in 1:(n-1)) {
+        #   a <- append(a, theta(x_i[j, 1], x_i[j, 2]))
+        # }
+        u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
+    }
+    u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
+    uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
+    # uu <- mean(u)-u
+    acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
+    # acc <- sum(uu*uu*uu)/(6*(sum(uu*uu))^1.5)
+    
+    zalpha <- qnorm(alpha)
+    
+    tt <- as.data.frame( mapply(function(z0, acc){pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))}, z0, acc) )
+    # tt <- pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))
+    
+    confpoints <- as.data.frame( mapply(function(tt, thetastar){quantile(x=thetastar,probs=tt,type=1)}, tt, thetastar) )
+    # confpoints <- quantile(x=thetastar,probs=tt,type=1)
+    # confpoints <- quantile(x=thetastar,probs=tt,type=1)
+    rownames(confpoints) <- NULL
+    # confpoints <- cbind(alpha,confpoints)
+    # dimnames(confpoints)[[2]] <- c("alpha","bca point")
+    return(confpoints)
+}
+```
+
+```{r}
+# Test
+# bcanon(df_b,est_boot_val,circle_all())
+```
+
+```{r}
 ## Making of bootstrap samples based on an initial sample
 f_boot <- function(df_sample, B){
   # df_sample: initial sample with 4 variables and of size n; 
@@ -182,8 +241,9 @@ MC_boot <- function(n, B1, B2){
     colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
     colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
     colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
-    # BOOT_CI <- c(BOOT_CI, CI_b = all_CI)
+    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p)
+    colnames(BCa_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
     BOOT_CI[[b]] <- all_CI
     names(BOOT_CI)[b] <- paste("CI", b, sep = "")
   }
