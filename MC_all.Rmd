@@ -125,11 +125,6 @@ bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
 ```
 
 ```{r}
-# Test
-# bcanon(df_b,est_boot_val,circle_all())
-```
-
-```{r}
 ## Making of bootstrap samples based on an initial sample
 f_boot <- function(df_sample, B){
   # df_sample: initial sample with 4 variables and of size n; 
@@ -346,8 +341,6 @@ coverage_rate <- function(k){
     CI_ratio <- cbind(CI_ratio, c(unlist(elt[k])[5], unlist(elt[k])[6]))
   }
   CI_nb$useless <- NULL
-  # rownames(CI_nb) <- 1:(nrow(CI_nb))
-  # colnames(CI_nb) <- c("x", "y")
   CI_vol$useless <- NULL
   CI_ratio$useless <- NULL
   
@@ -407,7 +400,7 @@ cat("Concerning the percentile approach, the coverage rates are the following: \
 
 ```{r}
 TC_rev_perc <- coverage_rate(3)
-cat("Concerning the percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
+cat("Concerning the reverse percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
     TC_rev_perc[1,1], "\n - for the volume of trees: ", TC_rev_perc[2,1], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,1],
     " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
     TC_rev_perc[1,2], "\n - for the volume of trees: ", TC_rev_perc[2,2], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,2],
