@@ -1,17 +1,17 @@
 ---
 title: "Monte Carlo and bootstrap for all parameters with a grid"
 output: pdf_document
-date: "2024-08-02"
+date: "2024-07-26"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
+The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees and the ratio volume of trees / number of trees), variances of these estimators and confidence intervals. The same elements are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may verify the invalidity of the bootstrap strategy to find the estimation of the variances.
 
 
-In this document, \textbf{sampling with a grid} is used to create a sample and \textbf{one single circle} with a radius of 5 is used to compute local variables.
+In this document, one single circle with a radius of 5 is used to compute local variables. Besides, and more importantly, a grid is used for sampling.
 
 ```{r}
 library(readxl) # to read the initial file
@@ -77,8 +77,7 @@ return(random_points)
 
 ```{r}
 # True values
-cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), 
-    "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees))
+cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v), "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees))
 ```
 
 # Monte Carlo alone
@@ -89,19 +88,19 @@ cat("Number of trees:", length(trees$x), "\nTotal volume:", sum(trees$v),
 ### Function to automate Monte Carlo method
 
 MonteCarlo <- function(n, B){
-  # n: sample size;
   # B: number of iterations for MC
   
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
-  
   MC_df <- data.frame(useless = rep(0, n))
   MC_est <- data.frame(useless = rep(0, 3), row.names = c("est_nb", "est_vol", "est_ratio"))
   
   for (b in 1:B) { # All in one "for" loop
-    # Uniform sampling over the whole territory
+    # Sampling over the whole territory
     df_grid <- sampling_grid(i,c_dim)
     a1 <- df_grid$x
     a2 <- df_grid$y
+    # n <- nrow(df_grid) # sample size
+    # p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
     # Variables of interest derived from the sample
     var <- mapply(circle_all, a1, a2)
     MC_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
@@ -115,10 +114,32 @@ MonteCarlo <- function(n, B){
   MC_est$useless <- NULL
   MC_var <- c(var(as.vector(t(MC_est[1,]))), var(as.vector(t(MC_est[2,]))), var(as.vector(t(MC_est[3,]))))
   
-  return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var))
+  # Confidence intervals
+  norm_CI <- data.frame(useless = rep(0, 2))
+  perc_CI <- data.frame(useless = rep(0, 2))
+  rev_perc_CI <- data.frame(useless = rep(0, 2))
+  for (l in 1:3) { # Loop: one estimator each time
+    est_init <- as.vector(t(MC_est[l,]))[1]
+    sorted_est <- sort(as.vector(t(MC_est[l,])))
+    lim_inf <- sorted_est[floor(B*2.5/100)]
+    lim_sup <- sorted_est[B - floor(B*2.5/100)]
+    perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
+    rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_init*2 - lim_sup, est_init*2 - lim_inf)))
+    norm_CI <- cbind(norm_CI, data.frame(c(est_init-qnorm(0.975)*sqrt(MC_var[l]), est_init+qnorm(0.975)*sqrt(MC_var[l]))))
+  }
+  norm_CI$useless <- NULL
+  perc_CI$useless <- NULL
+  rev_perc_CI$useless <- NULL
+  colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+  colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+  colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+  all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
+  
+  return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var, `Confidence Intervals` = all_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
-  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
+  # Estimations: 3 Estimations (number, volume, ratio volume / number) for each sample
   # Variances: Monte Carlo variance for each of the totals / ratio
+  # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
 }
 ```
 
@@ -127,45 +148,8 @@ MonteCarlo <- function(n, B){
 1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
 
 ```{r}
-## BCa nonparametric
-# Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
-# Function explained in Efron and Tibshirani (1993)
-# Adapted for our particular problem
-bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
-                     c(.025,.975)) { 
-    # df_init: initial sample
-    # est_init: estimation made thanks to the initial sample
-    # est_boot_val: estimations made thanks to bootstrap samples
-    # p: inclusion density
-    
-    nboot <- nrow(est_boot_val)
-    thetastar <- as.data.frame(mapply(sort, est_boot_val))
-    
-    z0 <- mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
-    
-    u <- data.frame(x = numeric(), y = numeric())
-    for(i in 1:n){
-        x_i <- df_init[-i,]
-        u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
-    }
-    u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
-    uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
-    acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
-    
-    zalpha <- qnorm(alpha)
-    
-    tt <- as.data.frame( mapply(function(z0, acc){pnorm(z0+ (z0+zalpha)/(1-acc*(z0+zalpha)))}, z0, acc) )
-    
-    confpoints <- as.data.frame( mapply(function(tt, thetastar){quantile(x=thetastar,probs=tt,type=1)}, tt, thetastar) )
-    rownames(confpoints) <- NULL
-    return(confpoints)
-}
-```
-
-```{r}
-## Making of bootstrap samples based on an initial sample
 f_boot <- function(df_sample, B){
-  # df_sample: initial sample with 4 variables and of size n; 
+  # df_sample: original sample; 
   # B: number of bootstrap samples made thanks to df_sample
   
   df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
@@ -178,15 +162,14 @@ f_boot <- function(df_sample, B){
   }
   df_boot$useless <- NULL
   return(df_boot)
-  # Return a data frame with B samples of 4 variables and of size (n-1)
+  # Return a data frame with B samples of as many variables as we want (in this application, 4) and of size (n-1)
 }
 ```
 
 ```{r}
-## Making of estimations for each sample made by the bootstrap method
+# Making of estimations for each sample made by the bootstrap method
 est_boot <- function(df, p){
-  # df: data frame with 4*B columns and (n-1) rows
-  # p: inclusion density function (constant in the uniform case)
+  # df: dataframe with 4*B columns and n rows
   
   n <- nrow(df) + 1 # sample size of the initial sample
   nboot <- length(df)/4 # number of bootstrap samples
@@ -209,7 +192,6 @@ est_boot <- function(df, p){
 ### Function to automate Monte Carlo + bootstrap method
 
 MC_boot <- function(n, B1, B2){
-  # n: sample size;
   # B1: number of iterations for MC;
   # B2: number of iterations for bootstrap
   
@@ -223,6 +205,8 @@ MC_boot <- function(n, B1, B2){
     df_grid <- sampling_grid(i,c_dim)
     a1 <- df_grid$x
     a2 <- df_grid$y
+    # n <- nrow(df_grid) # sample size
+    # p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
     var <- mapply(circle_all, a1, a2)
     df_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
     colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
@@ -257,9 +241,8 @@ MC_boot <- function(n, B1, B2){
     colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
     colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
     colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p)
-    colnames(BCa_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
+    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI)
+    # BOOT_CI <- c(BOOT_CI, CI_b = all_CI)
     BOOT_CI[[b]] <- all_CI
     names(BOOT_CI)[b] <- paste("CI", b, sep = "")
   }
@@ -305,6 +288,46 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ##  - for the number of trees: 263478.6
 ##  - for the volume of trees: 15475.27
 ##  - for the ratio volume / number of trees: 6.470082e-06
+```
+
+```{r}
+cat("95% confidence intervals using the normal method:\n - for the number of trees: [", res1$`Confidence Intervals`$Normal[1,1], ";", res1$`Confidence Intervals`$Normal[2,1], 
+    "]\n - for the volume of trees: [", res1$`Confidence Intervals`$Normal[1,2], ";", res1$`Confidence Intervals`$Normal[2,2], 
+    "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$Normal[1,3], ";", res1$`Confidence Intervals`$Normal[2,3],
+    "]")
+
+# Example:
+## 95% confidence intervals using the normal method:
+##  - for the number of trees: [ 28787.75 ; 30799.86 ]
+##  - for the volume of trees: [ 5115.539 ; 5603.177 ]
+##  - for the ratio volume / number of trees: [ 0.1748962 ; 0.1848671 ]
+```
+
+```{r}
+cat("95% confidence intervals using the percentile method:\n - for the number of trees: [", res1$`Confidence Intervals`$Percentile[1,1], ";", res1$`Confidence Intervals`$Percentile[2,1], 
+    "]\n - for the volume of trees: [", res1$`Confidence Intervals`$Percentile[1,2], ";", res1$`Confidence Intervals`$Percentile[2,2], 
+    "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$Percentile[1,3], ";", res1$`Confidence Intervals`$Percentile[2,3],
+    "]")
+
+# Example:
+## 95% confidence intervals using the percentile method:
+##  - for the number of trees: [ 28533.3 ; 30557.75 ]
+##  - for the volume of trees: [ 5188.069 ; 5673.772 ]
+##  - for the ratio volume / number of trees: [ 0.1787598 ; 0.1888164 ]
+```
+
+```{r}
+cat("95% confidence intervals using the reverse percentile method:\n - for the number of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,1], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,1], 
+    "]\n - for the volume of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,2], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,2], 
+    "]\n - for the ratio volume / number of trees: [", res1$`Confidence Intervals`$`Reverse percentile`[1,3], ";", res1$`Confidence Intervals`$`Reverse percentile`[2,3],
+    "]"
+    )
+
+# Example:
+## 95% confidence intervals using the reverse percentile method:
+##  - for the number of trees: [ 29029.86 ; 31054.31 ]
+##  - for the volume of trees: [ 5044.944 ; 5530.647 ]
+##  - for the ratio volume / number of trees: [ 0.1709469 ; 0.1810035 ]
 ```
 
 ## Monte Carlo and bootstrap
@@ -369,98 +392,6 @@ cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", m
 ##  - for the ratio volume / number of trees: 1.033748e-05
 ```
 
-```{r}
-coverage_rate <- function(k){
-  CI_nb <- data.frame(useless = c(0,0))
-  CI_vol <- data.frame(useless = c(0,0))
-  CI_ratio <- data.frame(useless = c(0,0))
-  for (elt in res2$`Confidence Intervals`) {
-    CI_nb <- cbind(CI_nb, c(unlist(elt[k])[1], unlist(elt[k])[2]))
-    CI_vol <- cbind(CI_vol, c(unlist(elt[k])[3], unlist(elt[k])[4]))
-    CI_ratio <- cbind(CI_ratio, c(unlist(elt[k])[5], unlist(elt[k])[6]))
-  }
-  CI_nb$useless <- NULL
-  CI_vol$useless <- NULL
-  CI_ratio$useless <- NULL
-  
-  CI_nb <- as.data.frame(t(CI_nb))
-  CI_vol <- as.data.frame(t(CI_vol))
-  CI_ratio <- as.data.frame(t(CI_ratio))
-  
-  # Coverage rate
-  TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb[1], CI_nb[2]) )
-  TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol[1], CI_vol[2]) )
-  TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio[1], CI_ratio[2]) )
-  
-  # Lower tail
-  low_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(a){as.numeric(29272 < a)}, CI_nb[1]) )
-  low_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(a){as.numeric(5412.722 < a)}, CI_vol[1]) )
-  low_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a){as.numeric(0.1849112 < a)}, CI_ratio[1]) )
-  
-  # Upper tail
-  up_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(b){as.numeric(29272 > b)}, CI_nb[2]) )
-  up_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(b){as.numeric(5412.722 > b)}, CI_vol[2]) )
-  up_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(b){as.numeric(0.1849112 > b)}, CI_ratio[2]) )
-  
-  # Mean length of CIs
-  length_nb <- mean( mapply(function(a,b){b-a}, CI_nb[1], CI_nb[2]) )
-  length_vol <- mean( mapply(function(a,b){b-a}, CI_vol[1], CI_vol[2]) )
-  length_ratio <- mean( mapply(function(a,b){b-a}, CI_ratio[1], CI_ratio[2]) )
-  
-  df_TC <- data.frame(TC = c(TC_nb, TC_vol, TC_ratio), Upper = c(low_tail_nb, low_tail_vol, low_tail_ratio), Lower = c(up_tail_nb, up_tail_vol, up_tail_ratio), Mean_length = c(length_nb, length_vol, length_ratio))
-  
-  return(df_TC)
-}
-```
-
-```{r}
-TC_normal <- coverage_rate(1)
-cat("Concerning the normal approach, the coverage rates are the following: \n - for the number of trees: ", 
-    TC_normal[1,1], "\n - for the volume of trees: ", TC_normal[2,1], "\n - for the ratio volume / number of trees: ", TC_normal[3,1],
-    " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_normal[1,2], "\n - for the volume of trees: ", TC_normal[2,2], "\n - for the ratio volume / number of trees: ", TC_normal[3,2],
-    " \n\nThe parts of the estimators over the upper limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_normal[1,3], "\n - for the volume of trees: ", TC_normal[2,3], "\n - for the ratio volume / number of trees: ", TC_normal[3,3],
-    " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
-    TC_normal[1,4], "\n - for the volume of trees: ", TC_normal[2,4], "\n - for the ratio volume / number of trees: ", TC_normal[3,4])
-```
-
-```{r}
-TC_perc <- coverage_rate(2)
-cat("Concerning the percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
-    TC_perc[1,1], "\n - for the volume of trees: ", TC_perc[2,1], "\n - for the ratio volume / number of trees: ", TC_perc[3,1],
-    " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_perc[1,2], "\n - for the volume of trees: ", TC_perc[2,2], "\n - for the ratio volume / number of trees: ", TC_perc[3,2],
-    " \n\nThe parts of the estimators over the upper limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_perc[1,3], "\n - for the volume of trees: ", TC_perc[2,3], "\n - for the ratio volume / number of trees: ", TC_perc[3,3],
-    " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
-    TC_perc[1,4], "\n - for the volume of trees: ", TC_perc[2,4], "\n - for the ratio volume / number of trees: ", TC_perc[3,4])
-```
-
-```{r}
-TC_rev_perc <- coverage_rate(3)
-cat("Concerning the reverse percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
-    TC_rev_perc[1,1], "\n - for the volume of trees: ", TC_rev_perc[2,1], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,1],
-    " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_rev_perc[1,2], "\n - for the volume of trees: ", TC_rev_perc[2,2], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,2],
-    " \n\nThe parts of the estimators over the upper limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_rev_perc[1,3], "\n - for the volume of trees: ", TC_rev_perc[2,3], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,3],
-    " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
-    TC_rev_perc[1,4], "\n - for the volume of trees: ", TC_rev_perc[2,4], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,4])
-```
-
-```{r}
-TC_bca <- coverage_rate(4)
-cat("Concerning the BCa approach, the coverage rates are the following: \n - for the number of trees: ", 
-    TC_bca[1,1], "\n - for the volume of trees: ", TC_bca[2,1], "\n - for the ratio volume / number of trees: ", TC_bca[3,1],
-    " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_bca[1,2], "\n - for the volume of trees: ", TC_bca[2,2], "\n - for the ratio volume / number of trees: ", TC_bca[3,2],
-    " \n\nThe parts of the estimators over the upper limit of the coverage rate are the following: \n - for the number of trees: ",
-    TC_bca[1,3], "\n - for the volume of trees: ", TC_bca[2,3], "\n - for the ratio volume / number of trees: ", TC_bca[3,3],
-    " \n\nThe mean lengths of coverage rates are the following: \n - for the number of trees: ",
-    TC_bca[1,4], "\n - for the volume of trees: ", TC_bca[2,4], "\n - for the ratio volume / number of trees: ", TC_bca[3,4])
-```
-
 ## Comparison of the variances
 
 ```{r}
@@ -473,3 +404,4 @@ cat("Difference between the two estimations of variance: \n - for the number of 
 ##  - for the volume of trees: 543.8335%
 ##  - for the ratio volume / number of trees: 59.77348%
 ```
+
