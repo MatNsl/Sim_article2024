@@ -139,3 +139,140 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   ) +
   coord_fixed()  # Ensure squares are not stretched
 
+
+
+### Strata 1 -----------
+
+# Create a data frame with the coordinates and colors
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data$color <- "white"  # Default color for all squares
+
+# Function to sample at random following the grid
+sampling_grid <- function(i){
+  cells_x <- c()
+  cells_y <- c()
+  
+  for (l in 0:29) {
+    if (l==0){
+      x_init <- i
+    }else if ((3*l+i) < 10){
+      x_init <- (3*l+i)
+    }else{
+      x_init <- (((3*l+i))%%(10))
+    }
+    k <- 0
+    while (x_init + 10*k < 30) {
+      a <- x_init + 10*k
+      b <- l
+      cells_x <- append(cells_x, a)
+      # print(a)
+      cells_y <- append(cells_y, b)
+      # print(b)
+      k <- k+1
+    }
+  }
+  return(data.frame(x = cells_x, y = cells_y))
+}
+
+test <- sampling_grid(3)
+
+# Specify the squares to be colored
+colored_squares <- data.frame(
+  x = test$x,
+  y = test$y +1,
+  color = c(rep("orange", 90))
+)
+
+colored_stratum <- data.frame(
+  x = test[test$y == 2,]$x,
+  y = test[test$y == 2,]$y +1,
+  color = c(rep("red", nrow(test[test$y == 2,])))
+)
+
+# Merge the colored squares into the grid data
+grid_data <- merge(grid_data, colored_squares, by = c("x", "y"), all.x = TRUE)
+grid_data <- merge(grid_data, colored_stratum, by = c("x", "y"), all.x = TRUE)
+grid_data$color[(is.na(grid_data$color)) & (grid_data$color.y == "orange")] <- "orange" 
+grid_data$color[is.na(grid_data$color)] <- "white" # Set NA colors to white
+
+ggplot(grid_data, aes(x = x, y = y, fill = color)) +
+  geom_tile(colour = "black") +  # Draw the squares with black borders # 
+  scale_fill_identity() +  # Use the colors specified in the data
+  theme_minimal() +  # Minimal theme for better visualization
+  theme(
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove grid lines
+  ) +
+  coord_fixed()  # Ensure squares are not stretched
+
+
+### Strata 2 -----------
+
+# Create a data frame with the coordinates and colors
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data$color <- "white"  # Default color for all squares
+
+# Function to sample at random following the grid
+sampling_grid <- function(i){
+  cells_x <- c()
+  cells_y <- c()
+  cells_h <- c()
+  
+  for (l in 0:29) {
+    if (l==0){
+      x_init <- i
+    }else if ((3*l+i) < 10){
+      x_init <- (3*l+i)
+    }else{
+      x_init <- (((3*l+i))%%(10))
+    }
+    k <- 0
+    while (x_init + 10*k < 30) {
+      a <- x_init + 10*k
+      b <- l
+      h <- (length(cells_x)+1)%%10
+      cells_x <- append(cells_x, a)
+      # print(a)
+      cells_y <- append(cells_y, b)
+      # print(b)
+      cells_h <- append(cells_h, h)
+      k <- k+1
+    }
+  }
+  return(data.frame(x = cells_x, y = cells_y, h = cells_h))
+}
+
+test <- sampling_grid(3)
+
+# Specify the squares to be colored
+colored_squares <- data.frame(
+  x = test$x,
+  y = test$y +1,
+  color = c(rep("orange", 90))
+)
+
+colored_stratum <- data.frame(
+  x = test[test$h == 3,]$x,
+  y = test[test$h == 3,]$y +1,
+  color = c(rep("red", nrow(test[test$h == 3,])))
+)
+
+# Merge the colored squares into the grid data
+grid_data <- merge(grid_data, colored_squares, by = c("x", "y"), all.x = TRUE)
+grid_data <- merge(grid_data, colored_stratum, by = c("x", "y"), all.x = TRUE)
+grid_data$color[(is.na(grid_data$color)) & (grid_data$color.y == "orange")] <- "orange" 
+grid_data$color[is.na(grid_data$color)] <- "white" # Set NA colors to white
+
+ggplot(grid_data, aes(x = x, y = y, fill = color)) +
+  geom_tile(colour = "black") +  # Draw the squares with black borders # 
+  scale_fill_identity() +  # Use the colors specified in the data
+  theme_minimal() +  # Minimal theme for better visualization
+  theme(
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove grid lines
+  ) +
+  coord_fixed()  # Ensure squares are not stretched
