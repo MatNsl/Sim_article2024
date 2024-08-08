@@ -105,7 +105,7 @@ MonteCarlo <- function(n, B){
 # Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
 # Function explained in Efron and Tibshirani (1993)
 # Adapted for our particular problem
-bcanon <- function(df_init,est_init,est_boot_val,p,nb_est,alpha =
+bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
                      c(.025,.975)) { 
     # df_init: initial sample
     # est_init: estimation made thanks to the initial sample
@@ -121,9 +121,10 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_est,alpha =
     for(i in 1:n){
         x_i <- df_init[-i,]
         # u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
-        u <- rbind(u, as.vector(mapply(function(j){mapply(sum(x_i[j]/p))}, 1:nb_est)))
+        u <- rbind(u, as.vector(mapply(function(j){mapply(sum(x_i[j]/p))}, 3:nb_var)))
     }
-    u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
+    # u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
+    u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 3:6) )
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
     acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
     
@@ -245,7 +246,7 @@ MC_boot <- function(n, B1, B2){
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
     colnames(rev_perc_CI) <- nam_lim
-    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p, nb_est)
+    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p, nb_var)
     colnames(BCa_CI) <- nam_lim
     all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
     BOOT_CI[[b]] <- all_CI
