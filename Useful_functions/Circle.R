@@ -6,6 +6,30 @@ source("~/work/Sim_article2024/Useful_functions/Inc_area_2.R")
 
 ### With one single circle -----
 
+circle_ALL <- function(x1, x2, R=5){
+  # 2 coordinates (x1, x2) and a radius (R)
+  
+  list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2))
+  if (length(list_trees) != 0){
+    local_var_nb <- sum(1/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
+    local_var_nb_small <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$x, 
+                                       trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+    local_var_nb_medium <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$x, 
+                                        trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+    local_var_nb_big <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$x, 
+                                     trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+    local_var_vol <- sum((trees[list_trees,]$v)/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
+  }
+  else{
+    local_var_nb <- 0
+    local_var_nb_small <- 0
+    local_var_nb_medium <- 0
+    local_var_vol <- 0
+  }
+  return(c(local_var_nb,local_var_vol))
+  # local_var_nb: local variable based on the number of trees; local_var_vol: local variable based on the volume of trees
+}
+
 ## Function to produce all local variables from one point
 circle_all <- function(x1, x2, R=5){
   # 2 coordinates (x1, x2) and a radius (R)
