@@ -6,7 +6,7 @@ source("~/work/Sim_article2024/Useful_functions/Inc_area_2.R")
 
 ### With one single circle -----
 
-circle_ALL <- function(x1, x2, R=5){
+circle_ALL_ <- function(x1, x2, R=5){
   # 2 coordinates (x1, x2) and a radius (R)
   
   list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2))
