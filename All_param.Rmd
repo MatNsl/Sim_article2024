@@ -140,7 +140,7 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
 
 ```{r}
 ## Making of bootstrap samples based on an initial sample
-f_boot <- function(df_sample, B, nb_est){
+f_boot <- function(df_sample, B, nb_var){
   # df_sample: initial sample with nb_est variables and of size n; 
   # B: number of bootstrap samples made thanks to df_sample
   
@@ -150,7 +150,7 @@ f_boot <- function(df_sample, B, nb_est){
     # (n-1) points at random
     sample_b <- df_sample[nb,]
     df_boot <- cbind(df_boot, sample_b)
-    colnames(df_boot)[((b-1)*(nb_var+2)+1 + 1):(b*(nb_var+2)+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:nb_est))
+    colnames(df_boot)[((b-1)*(nb_var+2)+1 + 1):(b*(nb_var+2)+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:(nb_var+2)))
       # c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
   df_boot$useless <- NULL
@@ -161,8 +161,8 @@ f_boot <- function(df_sample, B, nb_est){
 
 ```{r}
 ## Making of estimations for each sample made by the bootstrap method
-est_boot <- function(df, p){
-  # df: data frame with 4*B columns and (n-1) rows
+est_boot <- function(df, p, nb_var){
+  # df: data frame with (nb_var+2)*B columns and (n-1) rows
   # p: inclusion density function (constant in the uniform case)
   
   n <- nrow(df) + 1 # sample size of the initial sample
@@ -203,20 +203,17 @@ MC_boot <- function(n, B1, B2){
     nb_var <- length(var) # number of variables of interest
     df_b <- cbind(xy, var)
     
-    colnames(df_b)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b)-1)] <- 
+    colnames(df_b)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b))] <- 
       c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
     from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+2+j] /p)}
     est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
                            from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
-    rownames(est_b)[b] <- paste("ech", b, sep = "") 
-
-    # colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
-    # est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
+    rownames(est_b)[b] <- paste("ech", b, sep = "")
     
     # Bootstrap iterations
-    df_boot <- f_boot(df_b, B2, nb_est)
-    est_boot_val <- est_boot(df_boot, p)
+    df_boot <- f_boot(df_b, B2, nb_var)
+    est_boot_val <- est_boot(df_boot, p, nb_var)
     
     BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
     names(BOOT_var)[b] <- paste("Variance", b, sep = "")
