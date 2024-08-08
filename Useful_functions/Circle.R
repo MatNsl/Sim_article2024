@@ -11,23 +11,49 @@ circle_ALL <- function(x1, x2, R=5){
   
   list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R^2))
   if (length(list_trees) != 0){
-    local_var_nb <- sum(1/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
-    local_var_nb_small <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$x, 
-                                       trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
-    local_var_nb_medium <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$x, 
-                                        trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
-    local_var_nb_big <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$x, 
-                                     trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
-    local_var_vol <- sum((trees[list_trees,]$v)/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
+    var_nb <- sum(1/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
+    var_vol <- sum((trees[list_trees,]$v)/mapply(inc_area, trees[list_trees,]$x, trees[list_trees,]$y, MoreArgs = list(0,0,1000,1000,R)))
+    small_trees <- trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]
+    if (nrow(small_trees) != 0){
+      var_nb_small <- sum(1/mapply(inc_area, small_trees$x, 
+                                   small_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      var_vol_small <- sum(small_trees$v/mapply(inc_area, small_trees$x, 
+                                                small_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      rm(small_trees)
+    }else{
+      var_nb_small <- 0
+      var_vol_small <- 0
+    }
+    medium_trees <- trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]
+    if (nrow(medium_trees) != 0){
+      var_nb_medium <- sum(1/mapply(inc_area, medium_trees$x, 
+                                    medium_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      var_vol_medium <- sum(medium_trees$v/mapply(inc_area, medium_trees$x, 
+                                                  medium_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      rm(medium_trees)
+    }else{
+      var_nb_medium <- 0
+      var_vol_medium <- 0
+    }
+    big_trees <- trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]
+    if (nrow(big_trees) != 0){
+      var_nb_big <- sum(1/mapply(inc_area, big_trees$x, 
+                                 big_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      var_vol_big <- sum(big_trees$v/mapply(inc_area, big_trees$x, 
+                                            big_trees$y, MoreArgs = list(0,0,1000,1000,R)))
+      rm(big_trees)
+    }else{
+      var_nb_big <- 0
+      var_vol_big <- 0
+    }
+    
+    all_local_var <- c(var_nb, var_nb_small, var_nb_medium, var_nb_big, var_vol, var_vol_small, var_vol_medium, var_vol_big)
   }
   else{
-    local_var_nb <- 0
-    local_var_nb_small <- 0
-    local_var_nb_medium <- 0
-    local_var_vol <- 0
+    all_local_var <- rep(0,8)
   }
-  return(c(local_var_nb,local_var_vol))
-  # local_var_nb: local variable based on the number of trees; local_var_vol: local variable based on the volume of trees
+  return(all_local_var)
+  # var_nb: local variable based on the number of trees; var_vol: local variable based on the volume of trees
 }
 
 ## Function to produce all local variables from one point

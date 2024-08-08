@@ -1,0 +1,88 @@
+---
+title: "Comparison_test"
+output: pdf_document
+date: "2024-08-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl) # to read the initial file
+library(magrittr) # for pipes
+library(tibble) # for add_column
+```
+
+# Preliminaries
+
+```{r}
+# Importing the database with the artificial forest
+all_trees <- read_excel("~/work/Sim_article2024/Data/artificial_forest_round.xls")
+# To get closer to the NFI process, trees whose circumference is under 23.5 cm are not considered
+trees <- all_trees[(pi*all_trees$d130 > 23.5),]
+```
+
+```{r}
+# Functions to produce a local variable
+source("~/work/Sim_article2024/Useful_functions/Circle.R")
+```
+
+```{r}
+# Sample size
+n <- 1000
+a1 <- runif(n, 0, 1000)
+a2 <- runif(n, 0, 1000)
+```
+
+# Comparison
+
+```{r}
+start.time <- Sys.time()
+
+var1 <- mapply(circle_all, a1, a2)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+start.time <- Sys.time()
+
+var3 <- mapply(circle_ALL_bis, a1, a2)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+start.time <- Sys.time()
+
+var5 <- mapply(circle_ALL_quater, a1, a2)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+```{r}
+start.time <- Sys.time()
+
+var2 <- mapply(circle_ALL, a1, a2)
+
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+
+time.taken
+```
+
+
+
+
+
+

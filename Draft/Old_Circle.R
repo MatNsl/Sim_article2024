@@ -192,3 +192,21 @@ circle3_vol <- function(x1, x2, R1=15, R2=9, R3=6){
   return(local_var)
   # local_var: local variable based on the volume of trees
 }
+
+##### Rubbish ----------
+
+var_nb_small <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$x, 
+                             trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+var_nb_medium <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$x, 
+                              trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+var_nb_big <- sum(1/mapply(inc_area, trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$x, 
+                           trees[(rownames(trees) %in% list_trees) & (pi*trees$d130 > 117.5),]$y, MoreArgs = list(0,0,1000,1000,R)))
+var_nb <- 0
+var_nb_small <- 0
+var_nb_medium <- 0
+var_nb_big <- 0
+var_vol <- 0
+var_vol_small <- 0
+var_vol_medium <- 0
+var_vol_big <- 0
+
