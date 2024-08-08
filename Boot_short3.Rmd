@@ -205,7 +205,7 @@ MC_boot <- function(n, B1, B2){
 ```{r}
 start.time <- Sys.time()
 
-res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+res2 <- MC_boot(n, B1 = 800, B2 = 200)
 # Just one circle to begin with
 
 end.time <- Sys.time()
