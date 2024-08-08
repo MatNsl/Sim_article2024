@@ -65,29 +65,34 @@ MonteCarlo <- function(n, B){
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
   
   MC_df <- data.frame(useless = rep(0, n))
-  MC_est <- data.frame(useless = rep(0, 3), row.names = c("est_nb", "est_vol", "est_ratio"))
+  MC_est <- data.frame()
   
   for (b in 1:B) { # All in one "for" loop
+    print(b) ### To delete in the end!!! 
     # Uniform sampling over the whole territory
-    a1 <- runif(n, 0, 1000)
-    a2 <- runif(n, 0, 1000)
+    xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
     # Variables of interest derived from the sample
-    var <- mapply(circle_ALL_, a1, a2)
-    MC_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
-    MC_df <- cbind(MC_df, MC_b)
-    colnames(MC_df)[(4*(b-1)+2):(4*(b-1)+2+3)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("nb", b, sep = ""), paste("vol", b, sep = ""))
-    est_b <- t(data.frame(x = sum(MC_df[4*(b-1)+2+2] /p), y = sum(MC_df[4*(b-1)+2+3] /p), z = (sum(MC_df[4*(b-1)+2+3] /p))/(sum(MC_df[4*(b-1)+2+2]/p))))
-    MC_est <- cbind(MC_est, est_b)
-    colnames(MC_est)[b+1] <- paste("ech", b, sep = "") 
+    var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
+    nb_var <- length(var) # number of variables of interest
+    MC_df <- cbind(MC_df, xy, var)
+    colnames(MC_df)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("nb", b, sep = ""), paste("nb_s", b, sep = ""), paste("nb_m", b, sep = ""), paste("nb_b", b, sep = ""), paste("vol", b, sep = ""), paste("vol_s", b, sep = ""), paste("vol_m", b, sep = ""), paste("vol_b", b, sep = ""))
+    from_local <- function(j){sum(MC_df[(nb_var+2)*(b-1)+3+j] /p)}
+    est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
+                           from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
+    nb_est <- length(est_b) # number of estimations
+    MC_est <- rbind(MC_est, est_b)
+    rownames(MC_est)[b] <- paste("ech", b, sep = "") 
   }
   MC_df$useless <- NULL
-  MC_est$useless <- NULL
-  MC_var <- c(var(as.vector(t(MC_est[1,]))), var(as.vector(t(MC_est[2,]))), var(as.vector(t(MC_est[3,]))))
+  MC_est <- t(MC_est)
+  row.names(MC_est) <- NULL
+  var_est <- function(j){var(as.vector(MC_est[j,]))}
+  MC_var <- mapply(var_est, 1:nb_est)
   
   return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var))
-  # Local Variables: local variables (number and volume) for each point in each sample
-  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
-  # Variances: Monte Carlo variance for each of the totals / ratio
+  # Local Variables: local variables (numbers and volumes) for each point in each sample
+  # Estimations: all estimations (numbers, volumes, ratios) for each sample
+  # Variances: Monte Carlo variance for each of the totals / ratios
 }
 ```
 
@@ -100,7 +105,7 @@ MonteCarlo <- function(n, B){
 # Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
 # Function explained in Efron and Tibshirani (1993)
 # Adapted for our particular problem
-bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
+bcanon <- function(df_init,est_init,est_boot_val,p,nb_est,alpha =
                      c(.025,.975)) { 
     # df_init: initial sample
     # est_init: estimation made thanks to the initial sample
@@ -115,7 +120,8 @@ bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
     u <- data.frame(x = numeric(), y = numeric())
     for(i in 1:n){
         x_i <- df_init[-i,]
-        u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
+        # u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
+        u <- rbind(u, as.vector(mapply(function(j){mapply(sum(x_i[j]/p))}, 1:nb_est)))
     }
     u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
@@ -133,7 +139,7 @@ bcanon <- function(df_init,est_init,est_boot_val,p,...,alpha =
 
 ```{r}
 ## Making of bootstrap samples based on an initial sample
-f_boot <- function(df_sample, B){
+f_boot <- function(df_sample, B, nb_est){
   # df_sample: initial sample with 4 variables and of size n; 
   # B: number of bootstrap samples made thanks to df_sample
   
@@ -143,7 +149,8 @@ f_boot <- function(df_sample, B){
     # (n-1) points at random
     sample_b <- df_sample[nb,]
     df_boot <- cbind(df_boot, sample_b)
-    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
+    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:nb_est))
+      # c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
   df_boot$useless <- NULL
   return(df_boot)
@@ -189,15 +196,25 @@ MC_boot <- function(n, B1, B2){
   BOOT_CI <- list() # Confidence Intervals
   for (b in 1:B1) { # One MC iteration at a time
     # Uniform sampling over the whole territory
-    a1 <- runif(n, 0, 1000)
-    a2 <- runif(n, 0, 1000)
-    var <- mapply(circle_ALL_, a1, a2)
-    df_b <- data.frame(x = a1, y = a2, z = t(var)[,1], t = t(var)[,2])
-    colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
-    est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
+    xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
+    # Variables of interest derived from the sample
+    var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
+    nb_var <- length(var) # number of variables of interest
+    df_b <- cbind(xy, var)
+
+    colnames(df_b)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- 
+      c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
+    from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+3+j] /p)}
+    est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
+                           from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
+    nb_est <- length(est_b) # number of estimations
+    rownames(MC_est)[b] <- paste("ech", b, sep = "") 
+
+    # colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
+    # est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
     
     # Bootstrap iterations
-    df_boot <- f_boot(df_b, B2)
+    df_boot <- f_boot(df_b, B2, nb_est)
     est_boot_val <- est_boot(df_boot, p)
     
     BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
@@ -211,7 +228,7 @@ MC_boot <- function(n, B1, B2){
     norm_CI <- data.frame(useless = rep(0, 2))
     perc_CI <- data.frame(useless = rep(0, 2))
     rev_perc_CI <- data.frame(useless = rep(0, 2))
-    for (l in 1:3) { # Loop: one estimator each time
+    for (l in 1:length(est_boot_val)) { # Loop: one estimator each time
       sorted_est <- sort(est_boot_val[,l])
       lim_inf <- sorted_est[floor(B2*2.5/100)]
       lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
@@ -222,11 +239,14 @@ MC_boot <- function(n, B1, B2){
     norm_CI$useless <- NULL
     perc_CI$useless <- NULL
     rev_perc_CI$useless <- NULL
-    colnames(norm_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    colnames(perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    colnames(rev_perc_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
-    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p)
-    colnames(BCa_CI) <- c("lim_nb", "lim_vol", "lim_ratio")
+    nam_lim <- c("lim_nb", "lim_vol", "lim_ratio", "lim_nb_s", "lim_vol_s", "lim_ratio_s", 
+                 "lim_nb_m", "lim_vol_m", "lim_ratio_m", 
+                 "lim_nb_b", "lim_vol_b", "lim_ratio_b")
+    colnames(norm_CI) <- nam_lim
+    colnames(perc_CI) <- nam_lim
+    colnames(rev_perc_CI) <- nam_lim
+    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p, nb_est)
+    colnames(BCa_CI) <- nam_lim
     all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
     BOOT_CI[[b]] <- all_CI
     names(BOOT_CI)[b] <- paste("CI", b, sep = "")
@@ -256,7 +276,11 @@ time.taken
 ```
 
 ```{r}
-cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(t(res1$Estimations[1,]))), "\n - for the volume of trees:", mean(as.vector(t(res1$Estimations[2,]))), "\n - for the ratio volume / number of trees:", mean(as.vector(t(res1$Estimations[3,]))))
+cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(res1$Estimations[1,])), "\n - for the volume of trees:", mean(as.vector(res1$Estimations[2,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[3,])),
+    "\n\n - for the number of small trees:", mean(as.vector(res1$Estimations[4,])), "\n - for the volume of small trees:", mean(as.vector(res1$Estimations[5,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[6,])),
+    "\n\n - for the number of medium trees:", mean(as.vector(res1$Estimations[7,])), "\n - for the volume of medium trees:", mean(as.vector(res1$Estimations[8,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[9,])),
+    "\n\n - for the number of big trees:", mean(as.vector(res1$Estimations[10,])), "\n - for the volume of big trees:", mean(as.vector(res1$Estimations[11,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[12,]))
+    )
 
 # Example:
 ```
