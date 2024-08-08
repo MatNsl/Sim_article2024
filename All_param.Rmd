@@ -141,7 +141,7 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
 ```{r}
 ## Making of bootstrap samples based on an initial sample
 f_boot <- function(df_sample, B, nb_est){
-  # df_sample: initial sample with 4 variables and of size n; 
+  # df_sample: initial sample with nb_est variables and of size n; 
   # B: number of bootstrap samples made thanks to df_sample
   
   df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
@@ -150,7 +150,7 @@ f_boot <- function(df_sample, B, nb_est){
     # (n-1) points at random
     sample_b <- df_sample[nb,]
     df_boot <- cbind(df_boot, sample_b)
-    colnames(df_boot)[((b-1)*4+1 + 1):(b*4+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:nb_est))
+    colnames(df_boot)[((b-1)*(nb_var+2)+1 + 1):(b*(nb_var+2)+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:nb_est))
       # c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
   df_boot$useless <- NULL
@@ -166,14 +166,14 @@ est_boot <- function(df, p){
   # p: inclusion density function (constant in the uniform case)
   
   n <- nrow(df) + 1 # sample size of the initial sample
-  nboot <- length(df)/4 # number of bootstrap samples
+  nboot <- length(df)/(nb_var+2) # number of bootstrap samples
   vec_est1 <- c()
   vec_est2 <- c()
   vec_est3 <- c()
   for (c in 1:nboot) {
-    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + (4*(c-1))]/p))
-    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,4*c]/p))
-    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,4*c]/p))/((n/(n-1))*sum(df[,3 + (4*(c-1))]/p)))
+    vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p))
+    vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,(nb_var+2)*c]/p))
+    vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,(nb_var+2)*c]/p))/((n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p)))
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
   }
   vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
@@ -202,14 +202,14 @@ MC_boot <- function(n, B1, B2){
     var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
     nb_var <- length(var) # number of variables of interest
     df_b <- cbind(xy, var)
-
-    colnames(df_b)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- 
+    
+    colnames(df_b)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b)-1)] <- 
       c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
-    from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+3+j] /p)}
+    from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+2+j] /p)}
     est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
                            from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
-    rownames(MC_est)[b] <- paste("ech", b, sep = "") 
+    rownames(est_b)[b] <- paste("ech", b, sep = "") 
 
     # colnames(df_b) <- c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("vol.MC", b, sep = ""))
     # est_b <- t(data.frame(x = sum(df_b[3] /p), y = sum(df_b[4] /p), z = (sum(df_b[4] /p))/(sum(df_b[3]/p))))
