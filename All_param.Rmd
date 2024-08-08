@@ -170,7 +170,9 @@ est_boot <- function(df, p, nb_var){
   vec_est1 <- c()
   vec_est2 <- c()
   vec_est3 <- c()
+  # big_vec <- rep(c(), 12)
   for (c in 1:nboot) {
+    # mapply(function(vec_, c){append(vec_, (n/(n-1))*sum(df[, 2 + c + ((nb_var+2)*(c-1))]/p))}, big_vec, )
     vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p))
     vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,(nb_var+2)*c]/p))
     vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,(nb_var+2)*c]/p))/((n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p)))
