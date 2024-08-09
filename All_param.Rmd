@@ -68,7 +68,7 @@ MonteCarlo <- function(n, B){
   MC_est <- data.frame()
   
   for (b in 1:B) { # All in one "for" loop
-    print(b) ### To delete in the end!!! 
+    # print(b) ### To delete in the end!!! 
     # Uniform sampling over the whole territory
     xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
     # Variables of interest derived from the sample
@@ -167,9 +167,6 @@ est_boot <- function(df, p, nb_var){
   
   n <- nrow(df) + 1 # sample size of the initial sample
   nboot <- length(df)/(nb_var+2) # number of bootstrap samples
-  vec_est1 <- c()
-  vec_est2 <- c()
-  vec_est3 <- c()
   big_est <- as.data.frame(matrix(NA, ncol = nb_var, nrow = nboot))
   
   # Estimations of totals
@@ -184,10 +181,6 @@ est_boot <- function(df, p, nb_var){
         # vec_[c] <- (n/(n-1))*sum(df[, 2 + j + ((nb_var+2)*(c-1))]/p)
         # return(as.data.frame(vec_))
         # }, big_est2, 1:nb_var) 
-    # mapply(function(vec_, c){append(vec_, (n/(n-1))*sum(df[, 2 + c + ((nb_var+2)*(c-1))]/p))}, big_vec, 1:nboot)
-    # vec_est1 <- append(vec_est1, (n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p))
-    # vec_est2 <- append(vec_est2, (n/(n-1))*sum(df[,(nb_var+2)*c]/p))
-    # vec_est3 <- append(vec_est3, ((n/(n-1))*sum(df[,(nb_var+2)*c]/p))/((n/(n-1))*sum(df[,3 + ((nb_var+2)*(c-1))]/p)))
   }
   # Estimations of ratios
   l_big_est <- length(big_est)
@@ -195,20 +188,16 @@ est_boot <- function(df, p, nb_var){
   for (k in 1:4) {
     big_est <- add_column(big_est, rep(NA, nrow(big_est)))
   }
-  big_est2 <- big_est
   for (c in 1:nboot) {
-    # add_column()
-    big_est2 <- mapply(function(j){big_est2[c, l_big_est+j] <- big_est2[c,j+4]/big_est2[c,j]
-      return(as.data.frame(big_est2))
-    }, 1) # 4 ratios
+    ratio_c <- mapply(function(j){big_est[c,j+4]/big_est[c,j]
+      # return(as.data.frame(big_est2))
+    }, 1:4) # 4 ratios
+    big_est[c, (l_big_est+1):(l_big_est+4) ] <- ratio_c
+    # as.data.frame(split(as.data.frame(big_est2), ","))
+    # big_est2[c, j] <- 
     # big_est2[l_big_est+1] <- big_est2[c,1]/big_est2[c,1+4]
-    
-    test <- function(j){big_est2[c, l_big_est+j] <- big_est2[c,j+4]/big_est2[c,j]     
-    return(as.data.frame(big_est2))
     }
-  }
-  big_est <- t(big_est)
-  colnames(big_est) <- c("est_nb", "est_nb_s","est_nb_m", "est_nb_b", "est_vol", "est_vol_s", "est_vol_m", "est_vol_b")
+  colnames(big_est) <- c("est_nb", "est_nb_s","est_nb_m", "est_nb_b", "est_vol", "est_vol_s", "est_vol_m", "est_vol_b", "est_ratio", "est_ratio_s", "est_ratio_m", "est_ratio_b")
   # vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
   return(big_est)
   # Data frame with 3 estimations for each sample
@@ -239,8 +228,11 @@ MC_boot <- function(n, B1, B2){
     colnames(df_b)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b))] <- 
       c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
     from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+2+j] /p)}
-    est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
-                           from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
+    # est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
+    #                        from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
+    est_b <- data.frame(from_local(1), from_local(2), from_local(3), from_local(4), from_local(5), from_local(6), from_local(7), from_local(8), 
+                        (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
+                        (from_local(7))/(from_local(3)), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
     rownames(est_b)[b] <- paste("ech", b, sep = "")
     
@@ -264,19 +256,19 @@ MC_boot <- function(n, B1, B2){
       lim_inf <- sorted_est[floor(B2*2.5/100)]
       lim_sup <- sorted_est[B2 - floor(B2*2.5/100)]
       perc_CI <- cbind(perc_CI, data.frame(c(lim_inf, lim_sup)))
-      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(est_b[l,]*2 - lim_sup, est_b[l,]*2 - lim_inf)))
-      norm_CI <- cbind(norm_CI, data.frame(c(est_b[l,]-qnorm(0.975)*sqrt(var(est_boot_val[,l])), est_b[l,]+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
+      rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(as.numeric(est_b[l])*2 - lim_sup, as.numeric(est_b[l])*2 - lim_inf)))
+      norm_CI <- cbind(norm_CI, data.frame(c(as.numeric(est_b[l])-qnorm(0.975)*sqrt(var(est_boot_val[,l])), as.numeric(est_b[l])+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
     }
     norm_CI$useless <- NULL
     perc_CI$useless <- NULL
     rev_perc_CI$useless <- NULL
-    nam_lim <- c("lim_nb", "lim_vol", "lim_ratio", "lim_nb_s", "lim_vol_s", "lim_ratio_s", 
-                 "lim_nb_m", "lim_vol_m", "lim_ratio_m", 
-                 "lim_nb_b", "lim_vol_b", "lim_ratio_b")
+    nam_lim <- c("lim_nb", "lim_nb_s", "lim_nb_m", "lim_nb_b", 
+                 "lim_vol", "lim_vol_s", "lim_vol_m", "lim_vol_b", 
+                 "lim_ratio", "lim_ratio_s", "lim_ratio_m", "lim_ratio_b")
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
     colnames(rev_perc_CI) <- nam_lim
-    BCa_CI <- bcanon(df_b, est_b, est_boot_val,p, nb_var)
+    BCa_CI <- bcanon(df_b, est_b, est_boot_val, p, nb_var)
     colnames(BCa_CI) <- nam_lim
     all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
     BOOT_CI[[b]] <- all_CI
