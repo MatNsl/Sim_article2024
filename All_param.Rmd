@@ -68,7 +68,6 @@ MonteCarlo <- function(n, B){
   MC_est <- data.frame()
   
   for (b in 1:B) { # All in one "for" loop
-    # print(b) ### To delete in the end!!! 
     # Uniform sampling over the whole territory
     xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
     # Variables of interest derived from the sample
@@ -115,17 +114,16 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
     nboot <- nrow(est_boot_val)
     thetastar <- as.data.frame(mapply(sort, est_boot_val))
     
-    z0 <- mapply( function(j){qnorm(sum(mapply(function(long){long<est_init[,j]},est_boot_val[,j]))/nboot)} , 1:12) # length: nb_est
+    # Bias-correction
+    z0 <- mapply( function(j){qnorm(sum(mapply(function(long){long<est_init[,j]},est_boot_val[,j]))/nboot)} , 1:12)
     # Same as: mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
-      # qnorm(sum(mapply(function(one, long){long<one}, t(est_init),est_boot_val))/nboot)
     
+    # Acceleration
     u <- data.frame(replicate(nb_var, numeric(0)))
     for(i in 1:n){
         x_i <- df_init[-i,]
-        # u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
         u <- rbind(u, as.vector(mapply(function(j){sum(x_i[,j]/p)}, 3:(nb_var+2))))
     }
-    # u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
     u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 1:4) )
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
     acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
@@ -153,7 +151,6 @@ f_boot <- function(df_sample, B, nb_var){
     sample_b <- df_sample[nb,]
     df_boot <- cbind(df_boot, sample_b)
     colnames(df_boot)[((b-1)*(nb_var+2)+1 + 1):(b*(nb_var+2)+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:(nb_var+2)))
-      # c(paste("ech", b, colnames(df_sample)[1], sep = ""), paste("ech", b, colnames(df_sample)[2], sep = ""), paste("ech", b, colnames(df_sample)[3], sep = ""), paste("ech", b, colnames(df_sample)[4], sep = ""))
   }
   df_boot$useless <- NULL
   return(df_boot)
@@ -178,11 +175,6 @@ est_boot <- function(df, p, nb_var){
         return(as.data.frame(vec_))
         }, big_est, 1:nb_var)
     # (n/(n-1)) is the correction needed since we choose only (n-1) points
-    
-        # big_est2 <- mapply(function(vec_, j){
-        # vec_[c] <- (n/(n-1))*sum(df[, 2 + j + ((nb_var+2)*(c-1))]/p)
-        # return(as.data.frame(vec_))
-        # }, big_est2, 1:nb_var) 
   }
   # Estimations of ratios
   l_big_est <- length(big_est)
@@ -192,15 +184,10 @@ est_boot <- function(df, p, nb_var){
   }
   for (c in 1:nboot) {
     ratio_c <- mapply(function(j){big_est[c,j+4]/big_est[c,j]
-      # return(as.data.frame(big_est2))
     }, 1:4) # 4 ratios
     big_est[c, (l_big_est+1):(l_big_est+4) ] <- ratio_c
-    # as.data.frame(split(as.data.frame(big_est2), ","))
-    # big_est2[c, j] <- 
-    # big_est2[l_big_est+1] <- big_est2[c,1]/big_est2[c,1+4]
     }
   colnames(big_est) <- c("est_nb", "est_nb_s","est_nb_m", "est_nb_b", "est_vol", "est_vol_s", "est_vol_m", "est_vol_b", "est_ratio", "est_ratio_s", "est_ratio_m", "est_ratio_b")
-  # vec_est <- data.frame(est_nb = vec_est1, est_vol = vec_est2, est_ratio = vec_est3)
   return(big_est)
   # Data frame with 3 estimations for each sample
 }
@@ -227,12 +214,9 @@ MC_boot <- function(n, B1, B2){
     nb_var <- length(var) # number of variables of interest
     df_b <- cbind(xy, var)
     
-    # [((nb_var+2)*(b-1)+1):((nb_var+2)*(b))]
     colnames(df_b) <- 
       c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
     from_local <- function(j){sum(df_b[2+j] /p)} # (nb_var+2)*(b-1)
-    # est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
-    #                        from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
     est_b <- data.frame(from_local(1), from_local(2), from_local(3), from_local(4), from_local(5), from_local(6), from_local(7), from_local(8), 
                         (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
                         (from_local(7))/(from_local(3)), (from_local(8))/(from_local(4)))
