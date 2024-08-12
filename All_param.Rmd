@@ -324,7 +324,7 @@ EST_nb <- c()
 EST_vol <- c()
 EST_ratio <- c()
 for (elt in res2$Estimations) {
-  if ("data.frame" %in% class(elt)){ # we target bootstrap samples made from each MC iteration
+  if (grepl("boot", names(elt)) ){ # we target bootstrap samples made from each MC iteration
     EST_nb <- append(EST_nb, mean(elt$est_nb))
     EST_vol <- append(EST_vol, mean(elt$est_vol))
     EST_ratio <- append(EST_ratio, mean(elt$est_ratio))
@@ -452,8 +452,8 @@ cat("Concerning the BCa approach, the coverage rates are the following: \n - for
 ## Comparison of the variances
 
 ```{r}
-diff_percent <- function(x,y)100*(max(x,y)-min(x,y))/min(x,y)
-cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(res1$Variances[1], mean(VAR_nb)), "%", "\n - for the volume of trees: ", diff_percent(res1$Variances[2], mean(VAR_vol)), "%\n - for the ratio volume / number of trees: ", diff_percent(res1$Variances[3], mean(VAR_ratio)), "%", sep = "")
+diff_percent <- function(x,y){100*(max(res1$Variances[x],mean(y))-min(res1$Variances[x],mean(y)))/min(res1$Variances[x],mean(y))}
+cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(1, VAR_nb), "%", "\n - for the volume of trees: ", diff_percent(2, VAR_vol), "%\n - for the ratio volume / number of trees: ", diff_percent(3, VAR_ratio), "%", sep = "")
 
 # Example:
 ```
