@@ -126,7 +126,7 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
         u <- rbind(u, as.vector(mapply(function(j){sum(x_i[,j]/p)}, 3:(nb_var+2))))
     }
     # u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
-    u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 1:3) )
+    u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 1:4) )
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
     acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
     
@@ -227,16 +227,17 @@ MC_boot <- function(n, B1, B2){
     nb_var <- length(var) # number of variables of interest
     df_b <- cbind(xy, var)
     
-    colnames(df_b)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b))] <- 
+    # [((nb_var+2)*(b-1)+1):((nb_var+2)*(b))]
+    colnames(df_b) <- 
       c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
-    from_local <- function(j){sum(df_b[(nb_var+2)*(b-1)+2+j] /p)}
+    from_local <- function(j){sum(df_b[2+j] /p)} # (nb_var+2)*(b-1)
     # est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
     #                        from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
     est_b <- data.frame(from_local(1), from_local(2), from_local(3), from_local(4), from_local(5), from_local(6), from_local(7), from_local(8), 
                         (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
                         (from_local(7))/(from_local(3)), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
-    rownames(est_b)[b] <- paste("ech", b, sep = "")
+    rownames(est_b) <- paste("ech", b, sep = "")
     
     # Bootstrap iterations
     df_boot <- f_boot(df_b, B2, nb_var)
