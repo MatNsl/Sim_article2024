@@ -115,16 +115,18 @@ bcanon <- function(df_init,est_init,est_boot_val,p,nb_var,alpha =
     nboot <- nrow(est_boot_val)
     thetastar <- as.data.frame(mapply(sort, est_boot_val))
     
-    z0 <- mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
+    z0 <- mapply( function(j){qnorm(sum(mapply(function(long){long<est_init[,j]},est_boot_val[,j]))/nboot)} , 1:12) # length: nb_est
+    # Same as: mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
+      # qnorm(sum(mapply(function(one, long){long<one}, t(est_init),est_boot_val))/nboot)
     
-    u <- data.frame(x = numeric(), y = numeric())
+    u <- data.frame(replicate(nb_var, numeric(0)))
     for(i in 1:n){
         x_i <- df_init[-i,]
         # u <- rbind(u, c(sum(x_i[3]/p), sum(x_i[4]/p)))
-        u <- rbind(u, as.vector(mapply(function(j){mapply(sum(x_i[j]/p))}, 3:nb_var)))
+        u <- rbind(u, as.vector(mapply(function(j){sum(x_i[,j]/p)}, 3:(nb_var+2))))
     }
     # u <- cbind(u, mapply(function(x,y){x/y}, u[2], u[1]))
-    u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 3:6) )
+    u <- cbind(u, mapply(function(j){mapply(function(x,y){x/y}, u[j+4], u[j])}, 1:3) )
     uu <- as.data.frame( mapply(function(some_vec){mean(some_vec)-some_vec}, u) )
     acc <- mapply(function(some_vec){sum(some_vec**3)/(6*(sum(some_vec**2))^1.5)}, uu)
     
