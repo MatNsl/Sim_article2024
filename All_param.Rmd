@@ -62,9 +62,11 @@ MonteCarlo <- function(n, B){
   # n: sample size;
   # B: number of iterations for MC
   
+  raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
   
-  MC_df <- data.frame(useless = rep(0, n))
+  # MC_df <- data.frame(useless = rep(0, n))
+  MC_df <- data.frame(matrix(numeric(0), nrow = n))
   MC_est <- data.frame()
   
   for (b in 1:B) { # All in one "for" loop
@@ -74,15 +76,15 @@ MonteCarlo <- function(n, B){
     var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
     nb_var <- length(var) # number of variables of interest
     MC_df <- cbind(MC_df, xy, var)
-    colnames(MC_df)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- c(paste("x", b, sep = ""), paste("y", b, sep = ""), paste("nb", b, sep = ""), paste("nb_s", b, sep = ""), paste("nb_m", b, sep = ""), paste("nb_b", b, sep = ""), paste("vol", b, sep = ""), paste("vol_s", b, sep = ""), paste("vol_m", b, sep = ""), paste("vol_b", b, sep = ""))
+    colnames(MC_df)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- paste0(raw_names, b)[-(11:14)]
     from_local <- function(j){sum(MC_df[(nb_var+2)*(b-1)+3+j] /p)}
     est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
                            from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
     MC_est <- rbind(MC_est, est_b)
-    rownames(MC_est)[b] <- paste("ech", b, sep = "") 
+    rownames(MC_est)[b] <- paste("ech", b, sep = "")
   }
-  MC_df$useless <- NULL
+  # MC_df$useless <- NULL
   MC_est <- t(MC_est)
   row.names(MC_est) <- NULL
   var_est <- function(j){var(as.vector(MC_est[j,]))}
@@ -164,6 +166,7 @@ est_boot <- function(df, p, nb_var){
   # df: data frame with (nb_var+2)*B columns and (n-1) rows
   # p: inclusion density function (constant in the uniform case)
   
+  raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
   n <- nrow(df) + 1 # sample size of the initial sample
   nboot <- length(df)/(nb_var+2) # number of bootstrap samples
   big_est <- as.data.frame(matrix(NA, ncol = nb_var, nrow = nboot))
@@ -186,8 +189,8 @@ est_boot <- function(df, p, nb_var){
     ratio_c <- mapply(function(j){big_est[c,j+4]/big_est[c,j]
     }, 1:4) # 4 ratios
     big_est[c, (l_big_est+1):(l_big_est+4) ] <- ratio_c
-    }
-  colnames(big_est) <- c("est_nb", "est_nb_s","est_nb_m", "est_nb_b", "est_vol", "est_vol_s", "est_vol_m", "est_vol_b", "est_ratio", "est_ratio_s", "est_ratio_m", "est_ratio_b")
+  }
+  colnames(big_est) <- paste0("est_", raw_names)[-(1:2)]
   return(big_est)
   # Data frame with 3 estimations for each sample
 }
@@ -201,6 +204,7 @@ MC_boot <- function(n, B1, B2){
   # B1: number of iterations for MC;
   # B2: number of iterations for bootstrap
   
+  raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
   p <- sum(rep((1/1000)*(1/1000), n))
   BOOT_df <- list() # All local variables
   BOOT_est <- list() # All estimations
@@ -210,12 +214,12 @@ MC_boot <- function(n, B1, B2){
     # Uniform sampling over the whole territory
     xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
     # Variables of interest derived from the sample
-    var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
-    nb_var <- length(var) # number of variables of interest
-    df_b <- cbind(xy, var)
+    all_var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
+    nb_var <- length(all_var) # number of variables of interest
+    df_b <- cbind(xy, all_var)
     
-    colnames(df_b) <- 
-      c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
+    colnames(df_b) <- paste0(raw_names, ".MC", b)[-(11:14)]
+      # c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
     from_local <- function(j){sum(df_b[2+j] /p)} # (nb_var+2)*(b-1)
     est_b <- data.frame(from_local(1), from_local(2), from_local(3), from_local(4), from_local(5), from_local(6), from_local(7), from_local(8), 
                         (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
@@ -227,7 +231,8 @@ MC_boot <- function(n, B1, B2){
     df_boot <- f_boot(df_b, B2, nb_var)
     est_boot_val <- est_boot(df_boot, p, nb_var)
     
-    BOOT_var[[b]] <- list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
+    BOOT_var[[b]] <- mapply(var, est_boot_val)
+      # list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
     names(BOOT_var)[b] <- paste("Variance", b, sep = "")
     BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
     names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
@@ -249,9 +254,10 @@ MC_boot <- function(n, B1, B2){
     norm_CI$useless <- NULL
     perc_CI$useless <- NULL
     rev_perc_CI$useless <- NULL
-    nam_lim <- c("lim_nb", "lim_nb_s", "lim_nb_m", "lim_nb_b", 
-                 "lim_vol", "lim_vol_s", "lim_vol_m", "lim_vol_b", 
-                 "lim_ratio", "lim_ratio_s", "lim_ratio_m", "lim_ratio_b")
+    test <- paste0("lim_", raw_names)[-(1:2)]
+    # nam_lim <- c("lim_nb", "lim_nb_s", "lim_nb_m", "lim_nb_b", 
+    #              "lim_vol", "lim_vol_s", "lim_vol_m", "lim_vol_b", 
+    #              "lim_ratio", "lim_ratio_s", "lim_ratio_m", "lim_ratio_b")
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
     colnames(rev_perc_CI) <- nam_lim
