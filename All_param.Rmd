@@ -65,7 +65,6 @@ MonteCarlo <- function(n, B){
   raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
   p <- sum(rep((1/1000)*(1/1000), n)) # inclusion density
   
-  # MC_df <- data.frame(useless = rep(0, n))
   MC_df <- data.frame(matrix(numeric(0), nrow = n))
   MC_est <- data.frame()
   
@@ -73,22 +72,23 @@ MonteCarlo <- function(n, B){
     # Uniform sampling over the whole territory
     xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
     # Variables of interest derived from the sample
-    var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
-    nb_var <- length(var) # number of variables of interest
-    MC_df <- cbind(MC_df, xy, var)
-    colnames(MC_df)[((nb_var+2)*(b-1)+2):((nb_var+2)*(b)+2-1)] <- paste0(raw_names, b)[-(11:14)]
-    from_local <- function(j){sum(MC_df[(nb_var+2)*(b-1)+3+j] /p)}
-    est_b <- data.frame(from_local(1), from_local(5), (from_local(5))/(from_local(1)), from_local(2), from_local(6), (from_local(6))/(from_local(2)), 
-                           from_local(3), from_local(7), (from_local(7))/(from_local(3)), from_local(4), from_local(8), (from_local(8))/(from_local(4)))
+    all_var <- as.data.frame(t(mapply(circle_ALL_, xy$a1, xy$a2)))
+    nb_var <- length(all_var) # number of variables of interest
+    MC_df <- cbind(MC_df, xy, all_var)
+    colnames(MC_df)[((nb_var+2)*(b-1)+1):((nb_var+2)*(b))] <- paste0(raw_names, b)[-(11:14)]
+    from_local <- function(j){sum(MC_df[(nb_var+2)*(b-1)+2+j] /p)}
+    est_b <- append(as.vector(mapply(from_local, 1:8)), as.vector(mapply(function(j){(from_local(j+4))/(from_local(j))}, 1:4)))
     nb_est <- length(est_b) # number of estimations
     MC_est <- rbind(MC_est, est_b)
     rownames(MC_est)[b] <- paste("ech", b, sep = "")
   }
-  # MC_df$useless <- NULL
-  MC_est <- t(MC_est)
-  row.names(MC_est) <- NULL
-  var_est <- function(j){var(as.vector(MC_est[j,]))}
+  
+  var_est <- function(j){var(as.vector(MC_est[,j]))}
   MC_var <- mapply(var_est, 1:nb_est)
+  MC_var <- t(as.data.frame(MC_var))
+  colnames(MC_est) <- paste0("est_", raw_names)[-(1:2)]
+  colnames(MC_var) <- paste0("var_", raw_names)[-(1:2)]
+  row.names(MC_var) <- NULL
   
   return(list(`Local Variables` = MC_df, Estimations = MC_est, Variances = MC_var))
   # Local Variables: local variables (numbers and volumes) for each point in each sample
@@ -102,7 +102,7 @@ MonteCarlo <- function(n, B){
 1 000 Monte Carlo iterations and 400 bootstrap iterations for each one are appropriated.
 
 ```{r}
-## BCa nonparametric
+## Nonparametric BCa
 # Largely based on the code given in https://gitlab.com/scottkosty/bootstrap/-/blob/master/R/bcanon.R
 # Function explained in Efron and Tibshirani (1993)
 # Adapted for our particular problem
@@ -219,20 +219,19 @@ MC_boot <- function(n, B1, B2){
     df_b <- cbind(xy, all_var)
     
     colnames(df_b) <- paste0(raw_names, ".MC", b)[-(11:14)]
-      # c(paste("x.MC", b, sep = ""), paste("y.MC", b, sep = ""), paste("nb.MC", b, sep = ""), paste("nb_s.MC", b, sep = ""), paste("nb_m.MC", b, sep = ""), paste("nb_b.MC", b, sep = ""), paste("vol.MC", b, sep = ""), paste("vol_s.MC", b, sep = ""), paste("vol_m.MC", b, sep = ""), paste("vol_b.MC", b, sep = ""))
     from_local <- function(j){sum(df_b[2+j] /p)} # (nb_var+2)*(b-1)
     est_b <- data.frame(from_local(1), from_local(2), from_local(3), from_local(4), from_local(5), from_local(6), from_local(7), from_local(8), 
                         (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
                         (from_local(7))/(from_local(3)), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
-    rownames(est_b) <- paste("ech", b, sep = "")
+    rownames(est_b) <- paste0("ech", b)
+    colnames(est_b) <- paste0("est_", b)
     
     # Bootstrap iterations
     df_boot <- f_boot(df_b, B2, nb_var)
     est_boot_val <- est_boot(df_boot, p, nb_var)
     
     BOOT_var[[b]] <- mapply(var, est_boot_val)
-      # list(var_nb = var(est_boot_val$est_nb), var_vol = var(est_boot_val$est_vol), var_ratio = var(est_boot_val$est_ratio))
     names(BOOT_var)[b] <- paste("Variance", b, sep = "")
     BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
     names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
@@ -254,10 +253,7 @@ MC_boot <- function(n, B1, B2){
     norm_CI$useless <- NULL
     perc_CI$useless <- NULL
     rev_perc_CI$useless <- NULL
-    test <- paste0("lim_", raw_names)[-(1:2)]
-    # nam_lim <- c("lim_nb", "lim_nb_s", "lim_nb_m", "lim_nb_b", 
-    #              "lim_vol", "lim_vol_s", "lim_vol_m", "lim_vol_b", 
-    #              "lim_ratio", "lim_ratio_s", "lim_ratio_m", "lim_ratio_b")
+    nam_lim <- paste0("lim_", raw_names)[-(1:2)]
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
     colnames(rev_perc_CI) <- nam_lim
@@ -265,7 +261,7 @@ MC_boot <- function(n, B1, B2){
     colnames(BCa_CI) <- nam_lim
     all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
     BOOT_CI[[b]] <- all_CI
-    names(BOOT_CI)[b] <- paste("CI", b, sep = "")
+    names(BOOT_CI)[b] <- paste0("CI", b)
   }
   return(list(`Local Variables` = BOOT_df, Estimations = BOOT_est, Variances = BOOT_var, `Confidence Intervals` = BOOT_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
