@@ -8,7 +8,7 @@ date: "2024-08-02"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees, the ratio volume of trees / number of trees and \textbf{other ratios}) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
+The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees, the ratio volume of trees / number of trees as well as for \textbf{other totals and ratios}) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
 
 
 In this document, \textbf{uniform sampling} is used to create a sample and \textbf{one single circle} with a radius of 5 is used to compute local variables.
