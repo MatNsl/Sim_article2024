@@ -224,14 +224,14 @@ MC_boot <- function(n, B1, B2){
                         (from_local(5))/(from_local(1)), (from_local(6))/(from_local(2)), 
                         (from_local(7))/(from_local(3)), (from_local(8))/(from_local(4)))
     nb_est <- length(est_b) # number of estimations
-    rownames(est_b) <- paste0("ech", b)
-    colnames(est_b) <- paste0("est_", b)
+    colnames(est_b) <- paste0("est_", raw_names)[-(1:2)]
     
     # Bootstrap iterations
     df_boot <- f_boot(df_b, B2, nb_var)
     est_boot_val <- est_boot(df_boot, p, nb_var)
     
-    BOOT_var[[b]] <- as.data.frame(mapply(var, est_boot_val))
+    BOOT_var[[b]] <- as.data.frame(t(mapply(var, est_boot_val)))
+    colnames(BOOT_var[[b]]) <- paste0("var_", raw_names)[-(1:2)]
     names(BOOT_var)[b] <- paste("Variance", b, sep = "")
     BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
     names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
@@ -239,9 +239,12 @@ MC_boot <- function(n, B1, B2){
     names(BOOT_est)[(2*b-1):(2*b)] <- c(paste("est_MC", b, sep = ""), paste("est_boot", b, sep = ""))
     
     # Confidence intervals
-    norm_CI <- data.frame(useless = rep(0, 2))
-    perc_CI <- data.frame(useless = rep(0, 2))
-    rev_perc_CI <- data.frame(useless = rep(0, 2))
+    norm_CI <- data.frame(matrix(numeric(0), nrow = 2))
+    perc_CI <- data.frame(matrix(numeric(0), nrow = 2))
+    rev_perc_CI <- data.frame(matrix(numeric(0), nrow = 2))
+    # norm_CI <- data.frame(useless = rep(0, 2))
+    # perc_CI <- data.frame(useless = rep(0, 2))
+    # rev_perc_CI <- data.frame(useless = rep(0, 2))
     for (l in 1:length(est_boot_val)) { # Loop: one estimator each time
       sorted_est <- sort(est_boot_val[,l])
       lim_inf <- sorted_est[floor(B2*2.5/100)]
@@ -250,9 +253,9 @@ MC_boot <- function(n, B1, B2){
       rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(as.numeric(est_b[l])*2 - lim_sup, as.numeric(est_b[l])*2 - lim_inf)))
       norm_CI <- cbind(norm_CI, data.frame(c(as.numeric(est_b[l])-qnorm(0.975)*sqrt(var(est_boot_val[,l])), as.numeric(est_b[l])+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
     }
-    norm_CI$useless <- NULL
-    perc_CI$useless <- NULL
-    rev_perc_CI$useless <- NULL
+    # norm_CI$useless <- NULL
+    # perc_CI$useless <- NULL
+    # rev_perc_CI$useless <- NULL
     nam_lim <- paste0("lim_", raw_names)[-(1:2)]
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
@@ -325,20 +328,29 @@ time.taken
 ```{r}
 # We want all the variances obtained for each parameter of interest, 
 # to find the mean for each of these series
-EST_nb <- c()
-EST_vol <- c()
-EST_ratio <- c()
+raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
+EST_names <- paste0("EST_", raw_names)[-(1:2)]
+# est_names <- paste0("est_", raw_names)[-(1:2)]
+
+for (j in EST_names) {
+  assign(j, data.frame(matrix( numeric(0), nrow = (length(res2$Estimations)/2) )))
+}
+
 for (elt in res2$Estimations) {
-  if ( nrow(elt) != 1){ # we target bootstrap samples made from each MC iteration
-    EST_nb <- append(EST_nb, mean(elt$est_nb))
-    EST_vol <- append(EST_vol, mean(elt$est_vol))
-    EST_ratio <- append(EST_ratio, mean(elt$est_ratio))
+  if ( nrow(elt) != 1 ){ # we target bootstrap samples made from each MC iteration
+    for (j in 1:length(EST_names)) { # For each estimation
+      x <- append(get(x = EST_names[j]), mean(unlist(elt[j])))
+      assign(EST_names[j], x)
+    }
   }
 }
 ```
 
 ```{r}
-cat("Mean of the means of estimations obtained through each bootstrap process:\n - for the number of trees:", mean(EST_nb), "\n - for the volume of trees:", mean(EST_vol), "\n - for the ratio volume / number of trees:", mean(EST_ratio))
+cat("Mean of the means of estimations obtained through each bootstrap process:\n - for the number of trees:", mean(unlist(EST_nb)), "\n - for the volume of trees:", mean(unlist(EST_vol)), "\n - for the ratio volume / number of trees:", mean(unlist(EST_ratio)),
+        "\n\n - for the number of small trees:", mean(unlist(EST_nb_s)), "\n - for the volume of small trees:", mean(unlist(EST_vol_s)), "\n - for the ratio volume / number of trees:", mean(unlist(EST_ratio_s)),
+    "\n\n - for the number of medium trees:", mean(unlist(EST_nb_m)), "\n - for the volume of medium trees:", mean(unlist(EST_vol_m)), "\n - for the ratio volume / number of trees:", mean(unlist(EST_ratio_m)),
+    "\n\n - for the number of big trees:", mean(unlist(EST_nb_b)), "\n - for the volume of big trees:", mean(unlist(EST_vol_b)), "\n - for the ratio volume / number of trees:", mean(unlist(EST_ratio_b)))
 
 # Example:
 ```
@@ -346,18 +358,25 @@ cat("Mean of the means of estimations obtained through each bootstrap process:\n
 ```{r}
 # We want all the variances obtained for each parameter of interest, 
 # to find the mean for each of these series
-VAR_nb <- c()
-VAR_vol <- c()
-VAR_ratio <- c()
+VAR_names <- paste0("VAR_", raw_names)[-(1:2)]
+
+for (j in VAR_names) {
+  assign(j, data.frame(matrix( numeric(0), nrow = (length(res2$Estimations)/2) )))
+}
+
 for (elt in res2$Variances) {
-  VAR_nb <- append(VAR_nb, elt$var_nb)
-  VAR_vol <- append(VAR_vol, elt$var_vol)
-  VAR_ratio <- append(VAR_ratio, elt$var_ratio)
+  for (j in 1:length(VAR_names)) { # For each estimation
+    x <- append(get(x = VAR_names[j]), mean(unlist(elt[j])))
+    assign(VAR_names[j], x)
+  }
 }
 ```
 
 ```{r}
-cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(VAR_nb), "\n - for the volume of trees:", mean(VAR_vol), "\n - for the ratio volume / number of trees:", mean(VAR_ratio))
+cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", mean(unlist(VAR_nb)), "\n - for the volume of trees:", mean(unlist(VAR_vol)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio)),
+        "\n\n - for the number of small trees:", mean(unlist(VAR_nb_s)), "\n - for the volume of small trees:", mean(unlist(VAR_vol_s)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_s)),
+    "\n\n - for the number of medium trees:", mean(unlist(VAR_nb_m)), "\n - for the volume of medium trees:", mean(unlist(VAR_vol_m)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_m)),
+    "\n\n - for the number of big trees:", mean(unlist(VAR_nb_b)), "\n - for the volume of big trees:", mean(unlist(VAR_vol_b)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_b)))
 
 # Example:
 ```
@@ -427,32 +446,6 @@ coverage_rate <- function(k){
 }
 ```
 
-```{r eval=FALSE, include=FALSE}
-### DRAFT
-
-  # Coverage rate
-  TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb[1], CI_nb[2]) )
-  TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol[1], CI_vol[2]) )
-  TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio[1], CI_ratio[2]) )
-  
-  # Lower tail
-  low_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(a){as.numeric(29272 < a)}, CI_nb[1]) )
-  low_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(a){as.numeric(5412.722 < a)}, CI_vol[1]) )
-  low_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a){as.numeric(0.1849112 < a)}, CI_ratio[1]) )
-  
-  # Upper tail
-  up_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(b){as.numeric(29272 > b)}, CI_nb[2]) )
-  up_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(b){as.numeric(5412.722 > b)}, CI_vol[2]) )
-  up_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(b){as.numeric(0.1849112 > b)}, CI_ratio[2]) )
-  
-  # Mean length of CIs
-  length_nb <- mean( mapply(function(a,b){b-a}, CI_nb[1], CI_nb[2]) )
-  length_vol <- mean( mapply(function(a,b){b-a}, CI_vol[1], CI_vol[2]) )
-  length_ratio <- mean( mapply(function(a,b){b-a}, CI_ratio[1], CI_ratio[2]) )
-  
-  df_TC <- data.frame(TC = c(TC_nb, TC_vol, TC_ratio), Upper = c(low_tail_nb, low_tail_vol, low_tail_ratio), Lower = c(up_tail_nb, up_tail_vol, up_tail_ratio), Mean_length = c(length_nb, length_vol, length_ratio))
-```
-
 ```{r}
 TC_normal <- coverage_rate(1)
 cat("Concerning the normal approach, the coverage rates are the following: \n - for the number of trees: ", 
@@ -504,8 +497,12 @@ cat("Concerning the BCa approach, the coverage rates are the following: \n - for
 ## Comparison of the variances
 
 ```{r}
-diff_percent <- function(x,y){100*(max(res1$Variances[x],mean(y))-min(res1$Variances[x],mean(y)))/min(res1$Variances[x],mean(y))}
-cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(1, VAR_nb), "%", "\n - for the volume of trees: ", diff_percent(2, VAR_vol), "%\n - for the ratio volume / number of trees: ", diff_percent(3, VAR_ratio), "%", sep = "")
+diff_percent <- function(x,y){100*(max(res1$Variances[x],mean(unlist(y)))-min(res1$Variances[x],mean(unlist(y))))/min(res1$Variances[x],mean(unlist(y)))}
+cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(1, VAR_nb), "%", "\n - for the volume of trees: ", diff_percent(5, VAR_vol), "%\n - for the ratio volume / number of trees: ", diff_percent(9, VAR_ratio), "%", 
+    "\n\n - for the number of small trees:", diff_percent(2, VAR_nb_s), "%", "\n - for the volume of small trees:", diff_percent(6, VAR_vol_s), "%", "\n - for the ratio volume / number of trees:", diff_percent(10, VAR_ratio_s), "%",
+    "\n\n - for the number of medium trees:", diff_percent(3, VAR_nb_m), "%", "\n - for the volume of medium trees:", diff_percent(7, VAR_vol_m), "%", "\n - for the ratio volume / number of trees:", diff_percent(11, VAR_ratio_m), "%",
+    "\n\n - for the number of big trees:", diff_percent(4, VAR_nb_b), "%", "\n - for the volume of big trees:", diff_percent(8, VAR_vol_b), "%", "\n - for the ratio volume / number of trees:", diff_percent(12, VAR_ratio_b), "%",
+    sep = "")
 
 # Example:
 ```

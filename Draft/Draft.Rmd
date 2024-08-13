@@ -1177,4 +1177,33 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   coord_fixed()  # Ensure squares are not stretched
 ```
 
+##### From All_param -----------
+
+```{r eval=FALSE, include=FALSE}
+### DRAFT
+
+  # Coverage rate
+  TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb[1], CI_nb[2]) )
+  TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol[1], CI_vol[2]) )
+  TC_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a,b){as.numeric((0.1849112 > a) & (0.1849112 < b))}, CI_ratio[1], CI_ratio[2]) )
+  
+  # Lower tail
+  low_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(a){as.numeric(29272 < a)}, CI_nb[1]) )
+  low_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(a){as.numeric(5412.722 < a)}, CI_vol[1]) )
+  low_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(a){as.numeric(0.1849112 < a)}, CI_ratio[1]) )
+  
+  # Upper tail
+  up_tail_nb <- (1/nrow(CI_nb))*sum( mapply(function(b){as.numeric(29272 > b)}, CI_nb[2]) )
+  up_tail_vol <- (1/nrow(CI_vol))*sum( mapply(function(b){as.numeric(5412.722 > b)}, CI_vol[2]) )
+  up_tail_ratio <- (1/nrow(CI_ratio))*sum( mapply(function(b){as.numeric(0.1849112 > b)}, CI_ratio[2]) )
+  
+  # Mean length of CIs
+  length_nb <- mean( mapply(function(a,b){b-a}, CI_nb[1], CI_nb[2]) )
+  length_vol <- mean( mapply(function(a,b){b-a}, CI_vol[1], CI_vol[2]) )
+  length_ratio <- mean( mapply(function(a,b){b-a}, CI_ratio[1], CI_ratio[2]) )
+  
+  df_TC <- data.frame(TC = c(TC_nb, TC_vol, TC_ratio), Upper = c(low_tail_nb, low_tail_vol, low_tail_ratio), Lower = c(up_tail_nb, up_tail_vol, up_tail_ratio), Mean_length = c(length_nb, length_vol, length_ratio))
+```
+
+
 
