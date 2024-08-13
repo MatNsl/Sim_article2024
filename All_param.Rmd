@@ -231,7 +231,7 @@ MC_boot <- function(n, B1, B2){
     df_boot <- f_boot(df_b, B2, nb_var)
     est_boot_val <- est_boot(df_boot, p, nb_var)
     
-    BOOT_var[[b]] <- mapply(var, est_boot_val)
+    BOOT_var[[b]] <- as.data.frame(mapply(var, est_boot_val))
     names(BOOT_var)[b] <- paste("Variance", b, sep = "")
     BOOT_df <- c(BOOT_df, list(data_init = df_b, data_boot = df_boot))
     names(BOOT_df)[(2*b-1):(2*b)] <- c(paste("df_MC", b, sep = ""), paste("df_boot", b, sep = ""))
@@ -259,7 +259,7 @@ MC_boot <- function(n, B1, B2){
     colnames(rev_perc_CI) <- nam_lim
     BCa_CI <- bcanon(df_b, est_b, est_boot_val, p, nb_var)
     colnames(BCa_CI) <- nam_lim
-    all_CI <- list(Normal = norm_CI, Percentile = perc_CI, `Reverse percentile` = rev_perc_CI, BCa = BCa_CI)
+    all_CI <- list(Normal = as.data.frame(norm_CI), Percentile = as.data.frame(perc_CI), `Reverse percentile` = as.data.frame(rev_perc_CI), BCa = as.data.frame(BCa_CI))
     BOOT_CI[[b]] <- all_CI
     names(BOOT_CI)[b] <- paste0("CI", b)
   }
@@ -278,7 +278,8 @@ MC_boot <- function(n, B1, B2){
 ```{r}
 start.time <- Sys.time()
 
-res1 <- MonteCarlo(n, 10000)
+# res1 <- MonteCarlo(n, 10000)
+res1 <- MonteCarlo(n, 10)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -308,7 +309,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ```{r}
 start.time <- Sys.time()
 
-res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+# res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+res2 <- MC_boot(n, B1 = 10, B2 = 4)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -324,7 +326,7 @@ EST_nb <- c()
 EST_vol <- c()
 EST_ratio <- c()
 for (elt in res2$Estimations) {
-  if (grepl("boot", names(elt)) ){ # we target bootstrap samples made from each MC iteration
+  if ( nrow(elt) != 1){ # we target bootstrap samples made from each MC iteration
     EST_nb <- append(EST_nb, mean(elt$est_nb))
     EST_vol <- append(EST_vol, mean(elt$est_vol))
     EST_ratio <- append(EST_ratio, mean(elt$est_ratio))
@@ -359,22 +361,72 @@ cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", m
 
 ```{r}
 coverage_rate <- function(k){
-  CI_nb <- data.frame(useless = c(0,0))
-  CI_vol <- data.frame(useless = c(0,0))
-  CI_ratio <- data.frame(useless = c(0,0))
-  for (elt in res2$`Confidence Intervals`) {
-    CI_nb <- cbind(CI_nb, c(unlist(elt[k])[1], unlist(elt[k])[2]))
-    CI_vol <- cbind(CI_vol, c(unlist(elt[k])[3], unlist(elt[k])[4]))
-    CI_ratio <- cbind(CI_ratio, c(unlist(elt[k])[5], unlist(elt[k])[6]))
+  # k: integer to target one specific method to create confidence intervals
+  
+  raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
+  CI_names <- paste0("CI_", raw_names)[-(1:2)]
+  TC_names <- paste0("TC_", raw_names)[-(1:2)]
+  low_names <- paste0("low_", raw_names)[-(1:2)]
+  up_names <- paste0("up_", raw_names)[-(1:2)]
+  length_names <- paste0("length_", raw_names)[-(1:2)]
+  
+  real_val <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), nrow(trees[(pi*trees$d130 > 117.5),]), 
+  sum(trees$v), sum(trees[(pi*trees$d130 < 70.5),]$v), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), sum(trees[(pi*trees$d130 > 117.5),]$v), 
+  sum(trees$v)/nrow(trees), sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),])
+  )
+  
+  for (j in CI_names) {
+    assign(j, data.frame(matrix(numeric(0), nrow = 2)))
   }
-  CI_nb$useless <- NULL
-  CI_vol$useless <- NULL
-  CI_ratio$useless <- NULL
+  # CI_nb <- data.frame(matrix(numeric(0), nrow = 2))
+  # CI_vol <- data.frame(matrix(numeric(0), nrow = 2))
+  # CI_ratio <- data.frame(matrix(numeric(0), nrow = 2))
+  for (elt in res2$`Confidence Intervals`) { # For each MC iteration
+    for (j in CI_names) { # For each estimation
+      x <- cbind(get(x = j), elt[k])
+      assign(j, x)
+    }
+    # elt2 <- as.data.frame(elt[k])
+    # CI_nb <- cbind(CI_nb, elt2[k])
+      # cbind(CI_nb2, c(elt2[k][1,], elt2[k][2,]))
+    
+    # CI_nb <- cbind(CI_nb, c(unlist(elt[k])[1], unlist(elt[k])[2]))
+    # CI_vol <- cbind(CI_vol, c(unlist(elt[k])[3], unlist(elt[k])[4]))
+    # CI_ratio <- cbind(CI_ratio, c(unlist(elt[k])[5], unlist(elt[k])[6]))
+  }
   
-  CI_nb <- as.data.frame(t(CI_nb))
-  CI_vol <- as.data.frame(t(CI_vol))
-  CI_ratio <- as.data.frame(t(CI_ratio))
+  TC <- c()
+  Lower <- c()
+  Upper <- c()
+  Mean_length <- c()
+  for (j in 1:(length(CI_names))) {
+    x <- as.data.frame(t(get(x = CI_names[j])))
+    # Coverage rate
+    assign( TC_names[j], (1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ))
+    TC <- append(TC, get(TC_names[j]))
+    # Lower tail
+    assign( low_names[j], (1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ))
+    Lower <- append(Lower, get(low_names[j]))
+    # Upper tail
+    assign( up_names[j], (1/nrow(x))*sum( mapply(function(b){as.numeric(real_val[j] > b)}, x[2]) ))
+    Upper <- append(Upper, get(up_names[j]))
+    # Mean length of CIs
+    assign( length_names[j], (1/nrow(x))*sum( mapply(function(a,b){b-a}, x[1], x[2]) ))
+    Mean_length <- append(Mean_length, get(length_names[j]))
+  }
+  # CI_nb <- as.data.frame(t(CI_nb))
+  # CI_vol <- as.data.frame(t(CI_vol))
+  # CI_ratio <- as.data.frame(t(CI_ratio))
   
+  df_TC <- data.frame(TC, Lower, Upper, Mean_length)
+  
+  return(df_TC)
+}
+```
+
+```{r eval=FALSE, include=FALSE}
+### DRAFT
+
   # Coverage rate
   TC_nb <- (1/nrow(CI_nb))*sum( mapply(function(a,b){as.numeric((29272 > a) & (29272 < b))}, CI_nb[1], CI_nb[2]) )
   TC_vol <- (1/nrow(CI_vol))*sum( mapply(function(a,b){as.numeric((5412.722 > a) & (5412.722 < b))}, CI_vol[1], CI_vol[2]) )
@@ -396,9 +448,6 @@ coverage_rate <- function(k){
   length_ratio <- mean( mapply(function(a,b){b-a}, CI_ratio[1], CI_ratio[2]) )
   
   df_TC <- data.frame(TC = c(TC_nb, TC_vol, TC_ratio), Upper = c(low_tail_nb, low_tail_vol, low_tail_ratio), Lower = c(up_tail_nb, up_tail_vol, up_tail_ratio), Mean_length = c(length_nb, length_vol, length_ratio))
-  
-  return(df_TC)
-}
 ```
 
 ```{r}
