@@ -281,8 +281,7 @@ MC_boot <- function(n, B1, B2){
 ```{r}
 start.time <- Sys.time()
 
-# res1 <- MonteCarlo(n, 10000)
-res1 <- MonteCarlo(n, 10)
+res1 <- MonteCarlo(n, 10000)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -315,8 +314,7 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ```{r}
 start.time <- Sys.time()
 
-# res2 <- MC_boot(n, B1 = 1000, B2 = 400)
-res2 <- MC_boot(n, B1 = 10, B2 = 4)
+res2 <- MC_boot(n, B1 = 1000, B2 = 400)
 # Just one circle to begin with
 
 end.time <- Sys.time()
