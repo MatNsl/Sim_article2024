@@ -289,17 +289,20 @@ time.taken
 ```
 
 ```{r}
-cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(as.vector(res1$Estimations[1,])), "\n - for the volume of trees:", mean(as.vector(res1$Estimations[2,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[3,])),
-    "\n\n - for the number of small trees:", mean(as.vector(res1$Estimations[4,])), "\n - for the volume of small trees:", mean(as.vector(res1$Estimations[5,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[6,])),
-    "\n\n - for the number of medium trees:", mean(as.vector(res1$Estimations[7,])), "\n - for the volume of medium trees:", mean(as.vector(res1$Estimations[8,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[9,])),
-    "\n\n - for the number of big trees:", mean(as.vector(res1$Estimations[10,])), "\n - for the volume of big trees:", mean(as.vector(res1$Estimations[11,])), "\n - for the ratio volume / number of trees:", mean(as.vector(res1$Estimations[12,]))
+cat("Monte Carlo means of estimations: \n - for the number of trees:", mean(unlist(res1$Estimations[1])), "\n - for the volume of trees:", mean(unlist(res1$Estimations[5])), "\n - for the ratio volume / number of trees:", mean(unlist(res1$Estimations[9])),
+    "\n\n - for the number of small trees:", mean(unlist(res1$Estimations[2])), "\n - for the volume of small trees:", mean(unlist(res1$Estimations[6])), "\n - for the ratio volume / number of trees:", mean(unlist(res1$Estimations[10])),
+    "\n\n - for the number of medium trees:", mean(unlist(res1$Estimations[3])), "\n - for the volume of medium trees:", mean(unlist(res1$Estimations[7])), "\n - for the ratio volume / number of trees:", mean(unlist(res1$Estimations[11])),
+    "\n\n - for the number of big trees:", mean(unlist(res1$Estimations[4])), "\n - for the volume of big trees:", mean(unlist(res1$Estimations[8])), "\n - for the ratio volume / number of trees:", mean(unlist(res1$Estimations[12]))
     )
 
 # Example:
 ```
 
 ```{r}
-cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[2], "\n - for the ratio volume / number of trees:", res1$Variances[3])
+cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "\n - for the volume of trees:", res1$Variances[5], "\n - for the ratio volume / number of trees:", res1$Variances[9],
+    "\n\n - for the number of small trees:", res1$Variances[2], "\n - for the volume of small trees:", res1$Variances[6], "\n - for the ratio volume / number of trees:", res1$Variances[10],
+    "\n\n - for the number of medium trees:", res1$Variances[3], "\n - for the volume of medium trees:", res1$Variances[7], "\n - for the ratio volume / number of trees:", res1$Variances[11],
+    "\n\n - for the number of big trees:", res1$Variances[4], "\n - for the volume of big trees:", res1$Variances[8], "\n - for the ratio volume / number of trees:", res1$Variances[12])
 
 # Example:
 ```
