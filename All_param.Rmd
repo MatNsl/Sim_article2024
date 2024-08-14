@@ -192,7 +192,7 @@ est_boot <- function(df, p, nb_var){
   }
   colnames(big_est) <- paste0("est_", raw_names)[-(1:2)]
   return(big_est)
-  # Data frame with 3 estimations for each sample
+  # Data frame with estimations for each sample
 }
 ```
 
@@ -268,9 +268,9 @@ MC_boot <- function(n, B1, B2){
   }
   return(list(`Local Variables` = BOOT_df, Estimations = BOOT_est, Variances = BOOT_var, `Confidence Intervals` = BOOT_CI))
   # Local Variables: local variables (number and volume) for each point in each sample
-  # Estimations: 3 estimations (number, volume, ratio volume / number) for each sample
+  # Estimations: estimations (numbers, volumes, ratios volume / number) for each sample
   # Variances: mean of the bootstrap variance for each estimator
-  # Confidence Intervals: 3 different forms of 95% confidence intervals, for each total / ratio
+  # Confidence Intervals: 4 different forms of 95% confidence intervals, for each total / ratio
 }
 ```
 
@@ -314,7 +314,7 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ```{r}
 start.time <- Sys.time()
 
-res2 <- MC_boot(n, B1 = 1000, B2 = 400)
+res2 <- MC_boot(n, B1 = 200, B2 = 100)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -328,7 +328,6 @@ time.taken
 # to find the mean for each of these series
 raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
 EST_names <- paste0("EST_", raw_names)[-(1:2)]
-# est_names <- paste0("est_", raw_names)[-(1:2)]
 
 for (j in EST_names) {
   assign(j, data.frame(matrix( numeric(0), nrow = (length(res2$Estimations)/2) )))
@@ -384,6 +383,7 @@ coverage_rate <- function(k){
   # k: integer to target one specific method to create confidence intervals
   
   raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
+  nam_lim <- paste0("lim_", raw_names)[-(1:2)]
   CI_names <- paste0("CI_", raw_names)[-(1:2)]
   TC_names <- paste0("TC_", raw_names)[-(1:2)]
   low_names <- paste0("low_", raw_names)[-(1:2)]
@@ -402,9 +402,9 @@ coverage_rate <- function(k){
   # CI_vol <- data.frame(matrix(numeric(0), nrow = 2))
   # CI_ratio <- data.frame(matrix(numeric(0), nrow = 2))
   for (elt in res2$`Confidence Intervals`) { # For each MC iteration
-    for (j in CI_names) { # For each estimation
-      x <- cbind(get(x = j), elt[k])
-      assign(j, x)
+    for (j in 1:length(CI_names)) { # For each estimation
+      x <- cbind(get(x = CI_names[j]), elt[k][[1]][colnames(elt[k][[1]]) == nam_lim[j]]) # elt[k]
+      assign(CI_names[j], x)
     }
     # elt2 <- as.data.frame(elt[k])
     # CI_nb <- cbind(CI_nb, elt2[k])
@@ -497,9 +497,9 @@ cat("Concerning the BCa approach, the coverage rates are the following: \n - for
 ```{r}
 diff_percent <- function(x,y){100*(max(res1$Variances[x],mean(unlist(y)))-min(res1$Variances[x],mean(unlist(y))))/min(res1$Variances[x],mean(unlist(y)))}
 cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(1, VAR_nb), "%", "\n - for the volume of trees: ", diff_percent(5, VAR_vol), "%\n - for the ratio volume / number of trees: ", diff_percent(9, VAR_ratio), "%", 
-    "\n\n - for the number of small trees:", diff_percent(2, VAR_nb_s), "%", "\n - for the volume of small trees:", diff_percent(6, VAR_vol_s), "%", "\n - for the ratio volume / number of trees:", diff_percent(10, VAR_ratio_s), "%",
-    "\n\n - for the number of medium trees:", diff_percent(3, VAR_nb_m), "%", "\n - for the volume of medium trees:", diff_percent(7, VAR_vol_m), "%", "\n - for the ratio volume / number of trees:", diff_percent(11, VAR_ratio_m), "%",
-    "\n\n - for the number of big trees:", diff_percent(4, VAR_nb_b), "%", "\n - for the volume of big trees:", diff_percent(8, VAR_vol_b), "%", "\n - for the ratio volume / number of trees:", diff_percent(12, VAR_ratio_b), "%",
+    "\n\n - for the number of small trees: ", diff_percent(2, VAR_nb_s), "%", "\n - for the volume of small trees: ", diff_percent(6, VAR_vol_s), "%", "\n - for the ratio volume / number of trees: ", diff_percent(10, VAR_ratio_s), "%",
+    "\n\n - for the number of medium trees: ", diff_percent(3, VAR_nb_m), "%", "\n - for the volume of medium trees: ", diff_percent(7, VAR_vol_m), "%", "\n - for the ratio volume / number of trees: ", diff_percent(11, VAR_ratio_m), "%",
+    "\n\n - for the number of big trees: ", diff_percent(4, VAR_nb_b), "%", "\n - for the volume of big trees: ", diff_percent(8, VAR_vol_b), "%", "\n - for the ratio volume / number of trees: ", diff_percent(12, VAR_ratio_b), "%",
     sep = "")
 
 # Example:
