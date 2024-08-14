@@ -242,9 +242,6 @@ MC_boot <- function(n, B1, B2){
     norm_CI <- data.frame(matrix(numeric(0), nrow = 2))
     perc_CI <- data.frame(matrix(numeric(0), nrow = 2))
     rev_perc_CI <- data.frame(matrix(numeric(0), nrow = 2))
-    # norm_CI <- data.frame(useless = rep(0, 2))
-    # perc_CI <- data.frame(useless = rep(0, 2))
-    # rev_perc_CI <- data.frame(useless = rep(0, 2))
     for (l in 1:length(est_boot_val)) { # Loop: one estimator each time
       sorted_est <- sort(est_boot_val[,l])
       lim_inf <- sorted_est[floor(B2*2.5/100)]
@@ -253,9 +250,6 @@ MC_boot <- function(n, B1, B2){
       rev_perc_CI <- cbind(rev_perc_CI, data.frame(c(as.numeric(est_b[l])*2 - lim_sup, as.numeric(est_b[l])*2 - lim_inf)))
       norm_CI <- cbind(norm_CI, data.frame(c(as.numeric(est_b[l])-qnorm(0.975)*sqrt(var(est_boot_val[,l])), as.numeric(est_b[l])+qnorm(0.975)*sqrt(var(est_boot_val[,l])))))
     }
-    # norm_CI$useless <- NULL
-    # perc_CI$useless <- NULL
-    # rev_perc_CI$useless <- NULL
     nam_lim <- paste0("lim_", raw_names)[-(1:2)]
     colnames(norm_CI) <- nam_lim
     colnames(perc_CI) <- nam_lim
@@ -314,7 +308,7 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ```{r}
 start.time <- Sys.time()
 
-res2 <- MC_boot(n, B1 = 200, B2 = 100)
+res2 <- MC_boot(n, B1 = 1000, B2 = 400)
 # Just one circle to begin with
 
 end.time <- Sys.time()
