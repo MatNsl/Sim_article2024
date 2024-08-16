@@ -1205,5 +1205,62 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   df_TC <- data.frame(TC = c(TC_nb, TC_vol, TC_ratio), Upper = c(low_tail_nb, low_tail_vol, low_tail_ratio), Lower = c(up_tail_nb, up_tail_vol, up_tail_ratio), Mean_length = c(length_nb, length_vol, length_ratio))
 ```
 
+### LaTeX tables from R data frames ----------
+
+```{r}
+library(xtable)
+```
+
+```{r}
+# Tables
+print(xtable(TC_normal, caption = "Test"))
+```
+
+```{r}
+truc <- TC_normal %>%
+  kable("latex", booktabs = TRUE)
+truc
+```
+
+```{r}
+TC_normal %>%
+  kable("latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = "hold_position") %>%
+  row_spec(0, bold = TRUE) %>%
+  collapse_rows(columns = 1, latex_hline = "major")
+```
+
+### Simplification of All_tables ------------
+
+```{r}
+test2 <- paste("True integrals are the following:\n\nNumber of trees:", nrow(trees), "\nTotal volume:", sum(trees$v), 
+    "\nWhich leads to the following ratio \"Total volume / Number of trees\":", sum(trees$v)/nrow(trees),
+    "\n\nNumber of small trees:", nrow(trees[(pi*trees$d130 < 70.5),]), "\nVolume of small trees:", sum(trees[(pi*trees$d130 < 70.5),]$v), 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]),
+    "\n\nNumber of medium trees:", nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), "\nVolume of medium trees:", sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]),
+    "\n\nNumber of big trees:", nrow(trees[(pi*trees$d130 > 117.5),]), "\nVolume of big trees:", sum(trees[(pi*trees$d130 > 117.5),]$v), 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),])
+    )
+```
+
+```{r}
+cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", VAR_df[1], "\n - for the volume of trees:", VAR_df[5], "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio)),
+        "\n\n - for the number of small trees:", VAR_df[2], "\n - for the volume of small trees:", VAR_df[6], "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_s)),
+    "\n\n - for the number of medium trees:", VAR_df[3], "\n - for the volume of medium trees:", mean(unlist(VAR_vol_m)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_m)),
+    "\n\n - for the number of big trees:", VAR_df[4], "\n - for the volume of big trees:", mean(unlist(VAR_vol_b)), "\n - for the ratio volume / number of trees:", mean(unlist(VAR_ratio_b)))
+
+# Example:
+```
+
+```{r}
+# For z0 in nonparametric BCa
+# Same as: mapply(function(one, long){qnorm(sum(long<one)/nboot)}, t(est_init),est_boot_val)
+```
+
+```{r}
+# Really useless
+from_local <- function(j){sum(df_b[2+j] /p)} # (nb_var+2)*(b-1)
+```
 
 
