@@ -141,9 +141,59 @@ circle_vol_size <- function(x1, x2, R=5, bounds = c(23.5, 70.5)){
 
 ### With three circles -----
 
+##### 3 circles, 8 local variables of interest -----------------
+
+circle3_ALL_ <- function(x1, x2, R1=15, R2=9, R3=6){
+  # 2 coordinates (x1, x2) and 3 radii (R1 > R2 > R3)
+  
+  list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R1^2))
+  
+  list_trees1 <- list_trees[pi*trees[list_trees,]$d130 > 117.5] # List with the biggest trees
+  list_trees2 <- list_trees[(pi*trees[list_trees,]$d130 < 117.5) & (pi*trees[list_trees,]$d130 > 70.5) & ((x1 - trees[list_trees,]$x)^2 + (x2 - trees[list_trees,]$y)^2 <= R2^2)] # medium trees
+  list_trees3 <- list_trees[(pi*trees[list_trees,]$d130 < 70.5) & ((x1 - trees[list_trees,]$x)^2 + (x2 - trees[list_trees,]$y)^2 <= R3^2)] # smallest trees
+  
+  if (length(list_trees) != 0){
+    if (length(list_trees1) != 0){ # Big trees inside big circle
+      var_nb_big <- sum(1/mapply(inc_area, trees[list_trees1,]$x, trees[list_trees1,]$y, MoreArgs = list(0,0,1000,1000,R1)))
+      var_vol_big <- sum((trees[list_trees1,]$v)/mapply(inc_area, trees[list_trees1,]$x, trees[list_trees1,]$y, MoreArgs = list(0,0,1000,1000,R1)))
+    }
+    else{
+      var_nb_big <- 0
+      var_vol_big <- 0
+    }
+    
+    if (length(list_trees2) != 0){ # Medium trees inside medium circle
+      var_nb_medium <- sum(1/mapply(inc_area, trees[list_trees2,]$x, trees[list_trees2,]$y, MoreArgs = list(0,0,1000,1000,R2)))
+      var_vol_medium <- sum((trees[list_trees2,]$v)/mapply(inc_area, trees[list_trees2,]$x, trees[list_trees2,]$y, MoreArgs = list(0,0,1000,1000,R2)))
+    }
+    else{
+      var_nb_medium <- 0
+      var_vol_medium <- 0
+    }
+    
+    if (length(list_trees3) != 0){
+      var_nb_small <- sum(1/mapply(inc_area, trees[list_trees3,]$x, trees[list_trees3,]$y, MoreArgs = list(0,0,1000,1000,R3)))
+      var_vol_small <- sum((trees[list_trees3,]$v)/mapply(inc_area, trees[list_trees3,]$x, trees[list_trees3,]$y, MoreArgs = list(0,0,1000,1000,R3)))
+    }
+    else{
+      var_nb_small <- 0
+      var_vol_small <- 0
+    }
+    var_nb <- var_nb_big + var_nb_medium + var_nb_small
+    var_vol <- var_vol_big + var_vol_medium + var_vol_small
+    
+    all_local_var <- c(var_nb, var_nb_small, var_nb_medium, var_nb_big, var_vol, var_vol_small, var_vol_medium, var_vol_big)
+  }
+  else{
+    all_local_var <- rep(0,8)
+  }
+  return(all_local_var)
+  # all_local_var: vector with all variables of interest (numbers and volumes)
+}
+
 ## Function to produce all local variables from one point
 circle3_all <- function(x1, x2, R1=15, R2=9, R3=6){
-  # 2 coordinates (x1, x2) and a radius (R)
+  # 2 coordinates (x1, x2) and 3 radii (R1 > R2 > R3)
   
   list_trees <- which(((x1 - trees$x)^2 + (x2 - trees$y)^2 <= R1^2))
   
