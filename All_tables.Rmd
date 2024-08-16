@@ -1,7 +1,7 @@
 ---
 title: "Monte Carlo and bootstrap for ALL parameters with tables"
 output: pdf_document
-date: "2024-08-02"
+date: "2024-08-16"
 ---
 
 ```{r setup, include=FALSE}
@@ -77,7 +77,7 @@ tab_real <- real_df %>%
 
 ```{r}
 # The table itself
-print(tab_real)
+tab_real
 ```
 
 ```{r}
@@ -314,7 +314,7 @@ MC_boot <- function(n, B1, B2){
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 50
+B0 <- 1000
 ```
 
 ```{r}
@@ -351,8 +351,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 100
-B2 <- 50
+B1 <- 200
+B2 <- 100
 ```
 
 ```{r}
@@ -558,8 +558,7 @@ colnames(df_total) <- c("Parameter of interest", "Method", "Coverage rate", "Low
 
 ```{r}
 tab_ci <- df_total %>%
-  kable("latex", booktabs = TRUE, align = "llcccc", linesep = c("", "", "",
-  "\\addlinespace"), caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>% # \\hline
+  kable("latex", booktabs = TRUE, align = "llcccc", linesep = c("", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\hline"), caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   collapse_rows(columns = 1, latex_hline = "major")
@@ -567,7 +566,7 @@ tab_ci <- df_total %>%
 
 ```{r}
 # The table itself
-print(tab_ci)
+tab_ci
 ```
 
 ```{r}
@@ -604,7 +603,7 @@ tab_var <- diff_var %>%
 
 ```{r}
 # The table itself
-print(tab_var)
+tab_var
 ```
 
 ```{r}
