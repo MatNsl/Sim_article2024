@@ -508,16 +508,16 @@ coverage_rate <- function(k){
   for (j in 1:(length(CI_names))) {
     x <- as.data.frame(t(get(x = CI_names[j])))
     # Coverage rate
-    assign( TC_names[j], (1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ))
+    assign( TC_names[j], round((1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ), digits = 2))
     TC <- append(TC, get(TC_names[j]))
     # Lower tail
-    assign( low_names[j], (1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ))
+    assign( low_names[j], round((1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ), digits = 2))
     Lower <- append(Lower, get(low_names[j]))
     # Upper tail
-    assign( up_names[j], (1/nrow(x))*sum( mapply(function(b){as.numeric(real_val[j] > b)}, x[2]) ))
+    assign( up_names[j], round((1/nrow(x))*sum( mapply(function(b){as.numeric(real_val[j] > b)}, x[2]) ), digits = 2))
     Upper <- append(Upper, get(up_names[j]))
     # Mean length of CIs
-    assign( length_names[j], (1/nrow(x))*sum( mapply(function(a,b){b-a}, x[1], x[2]) ))
+    assign( length_names[j], round((1/nrow(x))*sum( mapply(function(a,b){b-a}, x[1], x[2]) ), digits = 2))
     Mean_length <- append(Mean_length, get(length_names[j]))
   }
   
