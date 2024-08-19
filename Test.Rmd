@@ -99,4 +99,48 @@ plot(x = random_points[, 1], y = random_points$var, xlab = "x", main = "Points a
 plot(x = random_points[, 2], y = random_points$var, xlab = "y", main = "Points as a function of y", las = 1)
 ```
 
+# Plot concentric circles
+
+```{r}
+# Set up the plotting area
+plot(1, type="n", xlab="", ylab="", xlim=c(-16, 16), ylim=c(-16, 16), asp=1)
+
+# Draw three concentric circles with increasing radius
+symbols(rep(0, 3), rep(0, 3), circles=c(6, 9, 15), inches=FALSE, add=TRUE, fg = rep("navyblue", 2))
+
+# Medium trees
+symbols(c(10, -13), c(-5, 3), circles=c(2.5, 3.6), inches=FALSE, add=TRUE, fg = rep("forestgreen", 2))
+
+# Little trees (between 4 and 12 grosso modo)
+symbols(c(10, -13), c(-5, 3), circles=c(4, 6), inches=FALSE, add=TRUE, fg = rep("green", 2))
+
+# Centers of trees
+points(c(10, -13), c(-5, 3), pch=19, col="black", cex=0.2)
+
+# Add axis lines for reference (optional)
+abline(h=0, v=0, col="gray")
+
+```
+
+```{r}
+# Set up the plotting area
+plot(1, type="n", xlab="", ylab="", xlim=c(-16, 16), ylim=c(-10, 10), asp=1)
+
+# Draw three concentric circles with increasing radius
+symbols(rep(0, 2), rep(0, 2), circles=c(6, 9), inches=FALSE, add=TRUE, fg = rep("navyblue", 2))
+
+# Medium trees
+symbols(c(8, -4), c(2, 3), circles=c(2.5, 3.6), inches=FALSE, add=TRUE, fg = rep("forestgreen", 2))
+
+# Little trees (between 4 and 12 grosso modo)
+symbols(c(7, -3), c(-5, 3), circles=c(4, 6), inches=FALSE, add=TRUE, fg = rep("green", 2))
+
+# Centers of trees
+points(c(10, -13), c(-5, 3), pch=19, col="black", cex=0.2)
+
+# Add axis lines for reference (optional)
+abline(h=0, v=0, col="gray")
+
+```
+
 
