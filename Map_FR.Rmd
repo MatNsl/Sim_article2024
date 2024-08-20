@@ -1,0 +1,146 @@
+---
+title: "Map of France"
+output: pdf_document
+date: "2024-08-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+
+## Test
+
+```{r}
+map <- map_data("france")
+ggplot(map)
+```
+
+
+# Another test
+
+```{r}
+install.packages("CARTElette")
+library(CARTElette)
+```
+
+```{r}
+shp_commune <- charger_carte(COG = 2019, nivsupra = "COM")
+```
+
+# No despair
+
+```{r}
+install.packages("sf")
+install.packages("tmap")
+```
+
+```{r}
+library(sf)
+library(tmap)
+```
+
+```{r}
+departements_l93 <- read_sf("~/work/Sim_article2024/DEPARTEMENT.shp")
+```
+
+# The cat
+
+```{r}
+# Installer les packages nécessaires si vous ne les avez pas déjà
+install.packages(c("sf", "rnaturalearth", "ggplot2", "rnaturalearthdata"))
+
+# Charger les packages
+library(sf)
+library(rnaturalearth)
+library(ggplot2)
+```
+
+```{r}
+# Télécharger les données du fond de carte
+france_map <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
+
+# Afficher la carte de la France métropolitaine
+ggplot(data = france_map) +
+  geom_sf() +
+  coord_sf(xlim = c(-6, 10), ylim = c(41, 52), expand = FALSE) +
+  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Carte de la France Métropolitaine")
+
+```
+
+```{r}
+
+# Télécharger les données du fond de carte
+france_map <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
+
+# Définir les limites de la France métropolitaine pour la grille
+xlims <- c(-6, 10)
+ylims <- c(40, 52)
+
+cell_width <- 1.0  # largeur des cases
+cell_height <- 1.0  # hauteur des cases
+
+# Créer une grille régulière de coordonnées
+grid_data <- expand.grid(
+  lon = seq(xlims[1], xlims[2], by = 0.1),  # Espacement horizontal
+  lat = seq(ylims[1], ylims[2], by = 0.1)   # Espacement vertical
+)
+
+# Créer une colonne fictive pour colorier certaines cases
+grid_data$color <- ifelse(grid_data$lon > 2 & grid_data$lon < 4 & 
+                            grid_data$lat > 46 & grid_data$lat < 48, 
+                          "highlight", "normal")
+
+# Afficher la carte avec la grille par-dessus
+ggplot(data = france_map) +
+  geom_sf(fill = "white", color = "black") +
+  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
+  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), alpha = 0.5) +
+  scale_fill_manual(values = c("highlight" = "red", "normal" = "transparent")) +
+  theme_minimal() +
+  labs(title = "Carte de la France Métropolitaine avec une Grille")
+
+```
+
+```{r}
+# Définir les limites de la France métropolitaine pour la grille
+xlims <- c(-5, 10)
+ylims <- c(41, 52)
+
+# Définir la taille des cases de la grille
+cell_width <- 1.0  # largeur des cases
+cell_height <- 1.0  # hauteur des cases
+
+# Créer une grille régulière de coordonnées
+grid_data <- expand.grid(
+  lon = seq(xlims[1], xlims[2], by = cell_width),  # Espacement horizontal
+  lat = seq(ylims[1], ylims[2], by = cell_height)  # Espacement vertical
+)
+
+# Créer une colonne fictive pour colorier certaines cases (à modifier selon vos besoins)
+grid_data$color <- ifelse(grid_data$lon > 2 & grid_data$lon < 4 & 
+                            grid_data$lat > 46 & grid_data$lat < 48, 
+                          "highlight", "normal")
+
+# Afficher la carte avec la grille par-dessus
+ggplot() +
+  geom_sf(data = france_map, fill = "white", color = "black") +
+  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
+  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), 
+            width = cell_width, height = cell_height, alpha = 0.5) +
+  scale_fill_manual(values = c("highlight" = "red", "normal" = "transparent")) +
+  theme_minimal() +
+  labs(title = "Carte de la France Métropolitaine avec une Grille")
+
+```
+
+
+
+
+
