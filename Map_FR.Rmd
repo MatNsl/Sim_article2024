@@ -1,5 +1,5 @@
 ---
-title: "Map of France"
+title: "Map of France - only tests"
 output: pdf_document
 date: "2024-08-20"
 ---
@@ -140,7 +140,39 @@ ggplot() +
 
 ```
 
+```{r}
+install.packages("cowplot")
+library(cowplot)
+```
 
+```{r}
+plot_grid(france_map)
+```
+
+```{r}
+# Définir les limites de la France métropolitaine pour la grille
+xlims <- c(-5, 10)
+ylims <- c(41, 52)
+
+ggplot() +
+  geom_sf(data = france_map)+
+  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
+theme(
+panel.grid.major = element_line(
+    colour = "dodgerblue",
+    linewidth = 0.5, linetype = "dotdash"
+)
+)
+```
+
+```{r}
+library(maps)
+data(franceMapEnv)
+```
+
+```{r}
+map('france')
+```
 
 
 
