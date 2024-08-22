@@ -6,7 +6,7 @@ library(ggplot2)
 ### Version 1 -----------
 
 # Create a data frame with the coordinates and colors
-grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
 grid_data$color <- "white"  # Default color for all squares
 
 # Specify the squares to be colored
@@ -33,10 +33,59 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   ) +
   coord_fixed()  # Ensure squares are not stretched
 
+### 2nd version of Version 1 -----------
+
+# Create a data frame with the coordinates and colors
+grid_data <- expand.grid(x = 1:23, y = 1:30)  # 30x23 grid
+grid_data$color <- "white"  # Default color for all squares
+
+# Function to sample at random following the grid
+sampling_grid <- function(i){
+  cells_x <- c()
+  cells_y <- c()
+  raw <- c()
+  elt <- i
+  while (elt < (30*23)) {
+    raw <- append(raw, elt)
+    elt <- elt+10
+  }
+  for (j in raw) {
+    cells_x <- append(cells_x, j%%23)
+    cells_y <- append(cells_y, (j-(j%%23))/23)
+  }
+  return(data.frame(x = cells_x, y = cells_y))
+}
+
+test <- sampling_grid(3)
+
+colored_squares <- data.frame(
+  x = test$x,
+  y = test$y +1,
+  color = c(rep("orange", 30*23))
+)
+
+# Merge the colored squares into the grid data
+grid_data <- merge(grid_data, colored_squares, by = c("x", "y"), all.x = TRUE)
+grid_data$color.y[is.na(grid_data$color.y)] <- "white" # Set NA colors to white
+# c(rep("white", 100))
+
+ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
+  geom_tile(colour = "black") +  # Draw the squares with black borders # 
+  scale_fill_identity() +  # Use the colors specified in the data
+  theme_minimal() +  # Minimal theme for better visualization
+  theme(
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove grid lines
+  ) +
+  coord_fixed()  # Ensure squares are not stretched
+
+
 ### Version 2 -----------
 
 # Create a data frame with the coordinates and colors
-grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
 grid_data$color <- "white"  # Default color for all squares
 
 # Function to sample at random following the grid
@@ -94,7 +143,7 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
 ### Version 3 -----------
 
 # Create a data frame with the coordinates and colors
-grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
 grid_data$color <- "white"  # Default color for all squares
 
 # Function to sample at random following the grid
@@ -144,7 +193,7 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
 ### Strata 1 -----------
 
 # Create a data frame with the coordinates and colors
-grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
 grid_data$color <- "white"  # Default color for all squares
 
 # Function to sample at random following the grid
@@ -211,7 +260,7 @@ ggplot(grid_data, aes(x = x, y = y, fill = color)) +
 ### Strata 2 -----------
 
 # Create a data frame with the coordinates and colors
-grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
 grid_data$color <- "white"  # Default color for all squares
 
 # Function to sample at random following the grid
