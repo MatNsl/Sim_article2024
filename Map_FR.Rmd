@@ -1,178 +1,145 @@
 ---
-title: "Map of France - only tests"
+title: "Map of France with a grid"
 output: pdf_document
-date: "2024-08-20"
+date: "2024-08-21"
 ---
+
+Goal: to produce a map of France with a grid and colored small squares
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(ggplot2)
-```
-
-
-## Test
-
-```{r}
-map <- map_data("france")
-ggplot(map)
-```
-
-
-# Another test
-
-```{r}
-install.packages("CARTElette")
-library(CARTElette)
-```
-
-```{r}
-shp_commune <- charger_carte(COG = 2019, nivsupra = "COM")
-```
-
-# No despair
-
-```{r}
+install.packages("ggplot2")
 install.packages("sf")
-install.packages("tmap")
+install.packages("ggspatial")
 ```
 
 ```{r}
-library(sf)
-library(tmap)
-```
-
-```{r}
-departements_l93 <- read_sf("~/work/Sim_article2024/DEPARTEMENT.shp")
-```
-
-# The cat
-
-```{r}
-# Installer les packages nécessaires si vous ne les avez pas déjà
-install.packages(c("sf", "rnaturalearth", "ggplot2", "rnaturalearthdata"))
-
-# Charger les packages
-library(sf)
-library(rnaturalearth)
 library(ggplot2)
+library(sf)
+library(ggspatial)
 ```
 
 ```{r}
-# Télécharger les données du fond de carte
-france_map <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
+install.packages("rnaturalearth")
+install.packages("rnaturalearthdata")
+library(rnaturalearth)
+library(rnaturalearthdata)
 
-# Afficher la carte de la France métropolitaine
-ggplot(data = france_map) +
-  geom_sf() +
-  coord_sf(xlim = c(-6, 10), ylim = c(41, 52), expand = FALSE) +
-  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), alpha = 0.5) +
-  theme_minimal() +
-  labs(title = "Carte de la France Métropolitaine")
-
+# Get the map data for metropolitan France
+france <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
 ```
 
 ```{r}
+# Create a data frame with the coordinates and colors
+# grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
+# grid_data$color <- "white"  # Default color for all squares
 
-# Télécharger les données du fond de carte
-france_map <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
+# (10--5)*2 = 30
+# (51.5-41)*2 = 21
 
-# Définir les limites de la France métropolitaine pour la grille
-xlims <- c(-6, 10)
-ylims <- c(40, 52)
+# Function to sample at random following the grid
+sampling_grid <- function(i){
+  cells_x <- c()
+  cells_y <- c()
+  
+  for (l in 0:20) {
+    if (l==0){
+      x_init <- i
+    }else if ((3*l+i) < 10){
+      x_init <- (3*l+i)
+    }else{
+      x_init <- (((3*l+i))%%(10))
+    }
+    k <- 0
+    while (x_init + 10*k < 30) {
+      a <- x_init + 10*k
+      b <- l
+      cells_x <- append(cells_x, a)
+      # print(a)
+      cells_y <- append(cells_y, b)
+      # print(b)
+      k <- k+1
+    }
+  }
+  return(data.frame(x = cells_x, y = cells_y))
+}
 
-cell_width <- 1.0  # largeur des cases
-cell_height <- 1.0  # hauteur des cases
+test <- sampling_grid(3)
+```
 
-# Créer une grille régulière de coordonnées
-grid_data <- expand.grid(
-  lon = seq(xlims[1], xlims[2], by = 0.1),  # Espacement horizontal
-  lat = seq(ylims[1], ylims[2], by = 0.1)   # Espacement vertical
+```{r}
+# Define grid parameters
+xmin <- -5   # Westernmost longitude
+xmax <- 10   # Easternmost longitude
+ymin <- 41   # Southernmost latitude
+ymax <- 51.5   # Northernmost latitude
+grid_size <- 0.5  # Grid size in degrees
+
+# Create a grid
+grid <- expand.grid(
+  x = seq(xmin, xmax, by = grid_size),
+  y = seq(ymin, ymax, by = grid_size)
 )
 
-# Créer une colonne fictive pour colorier certaines cases
-grid_data$color <- ifelse(grid_data$lon > 2 & grid_data$lon < 4 & 
-                            grid_data$lat > 46 & grid_data$lat < 48, 
-                          "highlight", "normal")
+# Convert the grid to an sf object
+grid_sf <- st_as_sf(grid, coords = c("x", "y"), crs = 4326)
 
-# Afficher la carte avec la grille par-dessus
-ggplot(data = france_map) +
-  geom_sf(fill = "white", color = "black") +
-  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
-  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), alpha = 0.5) +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "transparent")) +
-  theme_minimal() +
-  labs(title = "Carte de la France Métropolitaine avec une Grille")
+# Convert grid points to grid cells (polygons)
+grid_sf <- st_make_grid(grid_sf, cellsize = c(grid_size, grid_size))
 
+# Highlight specific cells
+highlighted_cells <- grid_sf[test$x + (test$y)*30, ]  # Example: highlight specific cells
+highlighted_cells <- st_sf(geometry = highlighted_cells, color = "red")  # Assign color
+
+# Combine highlighted and non-highlighted cells
+grid_sf <- st_sf(geometry = grid_sf, color = "white")
+grid_sf$color[which(grid_sf$geometry %in% highlighted_cells$geometry)] <- highlighted_cells$color
 ```
 
 ```{r}
-# Définir les limites de la France métropolitaine pour la grille
-xlims <- c(-5, 10)
-ylims <- c(41, 52)
+### First step: all chosen small squares in the grid
 
-# Définir la taille des cases de la grille
-cell_width <- 1.0  # largeur des cases
-cell_height <- 1.0  # hauteur des cases
-
-# Créer une grille régulière de coordonnées
-grid_data <- expand.grid(
-  lon = seq(xlims[1], xlims[2], by = cell_width),  # Espacement horizontal
-  lat = seq(ylims[1], ylims[2], by = cell_height)  # Espacement vertical
-)
-
-# Créer une colonne fictive pour colorier certaines cases (à modifier selon vos besoins)
-grid_data$color <- ifelse(grid_data$lon > 2 & grid_data$lon < 4 & 
-                            grid_data$lat > 46 & grid_data$lat < 48, 
-                          "highlight", "normal")
-
-# Afficher la carte avec la grille par-dessus
+# Plot the map
 ggplot() +
-  geom_sf(data = france_map, fill = "white", color = "black") +
-  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
-  geom_tile(data = grid_data, aes(x = lon, y = lat, fill = color), 
-            width = cell_width, height = cell_height, alpha = 0.5) +
-  scale_fill_manual(values = c("highlight" = "red", "normal" = "transparent")) +
+  geom_sf(data = france, fill = "lightblue") +
+  geom_sf(data = grid_sf, aes(fill = color), color = "black", alpha = 0.4) +
+  scale_fill_identity() +  # Use the colors defined in the grid_sf object
+  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
   theme_minimal() +
-  labs(title = "Carte de la France Métropolitaine avec une Grille")
-
+  ggtitle("Firs-stage sampling: sampling of cells within a grid") 
+# +
+  # annotation_scale(location = "bl") + # location = NULL
+  # annotation_north_arrow(location = "bl")
 ```
 
 ```{r}
-install.packages("cowplot")
-library(cowplot)
+# Intersect grid with the map of France
+intersected <- st_intersection(grid_sf, france)
+
+# Create a new column to determine land or water (or other features)
+# Here, we'll simply mark if a grid cell intersects with land (France)
+grid_sf$color2 <- ifelse(st_intersects(grid_sf, france, sparse = FALSE), "green", "blue")
 ```
 
 ```{r}
-plot_grid(france_map)
+grid_sf$color3 <- ifelse((grid_sf$color2 == "green") & (grid_sf$color == "red"), "orange", "white")
 ```
 
 ```{r}
-# Définir les limites de la France métropolitaine pour la grille
-xlims <- c(-5, 10)
-ylims <- c(41, 52)
+### Second step: all chosen small squares that have at least a land part 
 
+# Plot the map with color-coded grid cells
 ggplot() +
-  geom_sf(data = france_map)+
-  coord_sf(xlim = xlims, ylim = ylims, expand = FALSE) +
-theme(
-panel.grid.major = element_line(
-    colour = "dodgerblue",
-    linewidth = 0.5, linetype = "dotdash"
-)
-)
+  geom_sf(data = france, fill = "lightblue") +
+  geom_sf(data = grid_sf, aes(fill = color3), color = "black", alpha = 0.4) +
+  scale_fill_identity() +  # Use the colors defined in the grid_sf object
+  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
+  theme_minimal() 
+# +
+  # ggtitle("")
 ```
-
-```{r}
-library(maps)
-data(franceMapEnv)
-```
-
-```{r}
-map('france')
-```
-
 
 

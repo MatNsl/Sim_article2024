@@ -68,7 +68,7 @@ colnames(real_df) <- c("", "Number", "Volume", "Ratio Volume/Number")
 
 ```{r}
 tab_real <- real_df %>%
-  kable("latex", booktabs = TRUE, align = "lccc", linesep = c("", "\\addlinespace", "", "", "", ""), 
+  kable("latex", booktabs = FALSE, align = "lccc", linesep = c("", "\\addlinespace", "", "", "", ""), 
         caption = paste("True values proper to the database"), col.names = gsub("[.]", " ", names(real_df))) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
@@ -597,10 +597,12 @@ colnames(df_total) <- c("Parameter of interest", "Method", "Coverage rate", "Low
 
 ```{r}
 tab_ci <- df_total %>%
-  kable("latex", booktabs = TRUE, align = "llcccc", linesep = c("", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\hline"), caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>% # \\hline
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>%
   kable_styling(latex_options = "hold_position") %>%
-  row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
-  collapse_rows(columns = 1, latex_hline = "major")
+  row_spec(0, bold = TRUE) %>%
+  row_spec(c(0, 16,32), hline_after = T) %>% 
+  row_spec(c(16,32), hline_after = T) %>% 
+  collapse_rows(columns = 1, valign = "middle")
 ```
 
 ```{r}

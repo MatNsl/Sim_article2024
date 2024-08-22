@@ -68,7 +68,7 @@ colnames(real_df) <- c("", "Number", "Volume", "Ratio Volume/Number")
 
 ```{r}
 tab_real <- real_df %>%
-  kable("latex", booktabs = TRUE, align = "lccc", linesep = c("", "\\addlinespace", "", "", "", ""), 
+  kable("latex", booktabs = FALSE, align = "lccc", linesep = c("", "\\addlinespace", "", "", "", ""), 
         caption = paste("True values proper to the database"), col.names = gsub("[.]", " ", names(real_df))) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
@@ -314,7 +314,7 @@ MC_boot <- function(n, B1, B2){
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 1000
+B0 <- 10
 ```
 
 ```{r}
@@ -351,8 +351,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 200
-B2 <- 100
+B1 <- 10
+B2 <- 10
 ```
 
 ```{r}
@@ -558,10 +558,12 @@ colnames(df_total) <- c("Parameter of interest", "Method", "Coverage rate", "Low
 
 ```{r}
 tab_ci <- df_total %>%
-  kable("latex", booktabs = TRUE, align = "llcccc", linesep = c("", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\addlinespace", "", "", "", "\\hline"), caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>% # \\hline
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
-  row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
-  collapse_rows(columns = 1, latex_hline = "major")
+  row_spec(0, bold = TRUE) %>%
+  row_spec(c(0, 16,32), hline_after = T) %>% 
+  row_spec(c(16,32), hline_after = T) %>% 
+  collapse_rows(columns = 1, valign = "middle")
 ```
 
 ```{r}
@@ -594,7 +596,7 @@ diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Difference betwee
 
 ```{r}
 tab_var <- diff_var %>%
-  kable("latex", booktabs = TRUE, align = "lc", linesep = c("", "", "",
+  kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
   "\\addlinespace"), caption = paste("Comparison of the two methods when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
