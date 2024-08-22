@@ -50,8 +50,8 @@ sampling_grid <- function(i){
     elt <- elt+10
   }
   for (j in raw) {
-    cells_x <- append(cells_x, j%%23)
-    cells_y <- append(cells_y, (j-(j%%23))/23)
+    cells_x <- append(cells_x, ifelse(j%%23 == 0, 23, j%%23))
+    cells_y <- append(cells_y, ifelse(j%%23 == 0, ((j-(j%%23))/23) - 1, (j-(j%%23))/23) )
   }
   return(data.frame(x = cells_x, y = cells_y))
 }
