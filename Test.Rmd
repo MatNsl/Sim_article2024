@@ -189,25 +189,3 @@ points(-0.2, -0.72, pch="S", col="red", cex=0.7)
 #theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank())
 ```
 
-```{r}
-# Set up the plotting area
-my_plot <- plot(1, type="n", xlab="", ylab="", xlim=c(-16, 16), ylim=c(-16, 16), asp=1, xaxt="n", yaxt="n")+
-  
-  # axis.ticks.x = element_blank(),
-  # Draw three concentric circles with increasing radius
-  symbols(0, 0, circles=10, inches=FALSE, add=TRUE, fg = "navyblue")+
-  
-  # Bad trees
-  symbols(c(15, -5, -11), c(2, 10.5, -11), circles=c(2.5, 3.7, 2), inches=FALSE, add=TRUE, fg = rep("grey", 2))+
-  
-  # Good trees 
-  symbols(c(7, 4,-4), c(-5, 3.5, -5), circles=c(4, 3.5, 2), inches=FALSE, add=TRUE, fg = rep("forestgreen", 2))+
-  
-  # Centers of trees
-  points(c(15, -5, 7, 4, -4, -11), c(2, 10.5, -5, 3.5, -5, -11), pch=as.character(1:6), col="black", cex=0.7) # pch=19
-
-# Sampled point
-points(0, 0, pch=19, col="red", cex=0.7) # pch=19
-points(-0.2, -0.72, pch="S", col="red", cex=0.7)
-```
-
