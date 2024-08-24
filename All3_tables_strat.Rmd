@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees, the ratio volume of trees / number of trees as well as for \textbf{other totals and ratios}) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
 
 
-In this document, \textbf{uniform sampling} is used to create a sample and \textbf{three concentric circles} are used to compute local variables.
+In this document, \textbf{sampling through a grid} is used to create a sample and \textbf{three concentric circles} are used to compute local variables.
 
 ```{r}
 install.packages("kableExtra")
@@ -92,6 +92,43 @@ cat(tab_real)
 raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
 ```
 
+```{r}
+i <- sample(1:10, 1) # choice of the rank of the identifier we want
+i
+```
+
+```{r}
+# Dimension of a small square (length of one side of the square)
+# We assume that c_dim is a divisor of 1000
+c_dim <- 10
+```
+
+```{r}
+# Function to sample at random following the grid
+sampling_grid <- function(i,c_dim){
+random_points <- data.frame(x = numeric(), y = numeric())
+
+for (l in 0:((1000/c_dim)-1)) {
+  if (l==0){
+    x_init <- i*c_dim
+  }else if ((3*l+i)*c_dim < (10)*c_dim){
+    x_init <- (3*l+i)*c_dim
+  }else{
+    x_init <- (((3*l+i)*c_dim)%%(c_dim*10))
+  }
+  k <- 0
+  while (x_init + 10*c_dim*k < 1000) {
+    a <- runif(1, x_init + 10*c_dim*k, x_init + 10*c_dim*k + c_dim)
+    b <- runif(1, l*c_dim, (l+1)*c_dim)
+    random_points <- rbind(random_points, list(a,b))
+    k <- k+1
+  }
+}
+colnames(random_points) <- list("x", "y")
+return(random_points)
+}
+```
+
 # Functions
 
 ## Monte Carlo alone
@@ -111,8 +148,9 @@ MonteCarlo <- function(n, B){
   MC_est <- data.frame()
   
   for (b in 1:B) { # All in one "for" loop
-    # Uniform sampling over the whole territory
-    xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
+    # Sampling in the territory
+    df_grid <- sampling_grid(i,c_dim)
+    xy <- data.frame(a1 = df_grid$x, a2 = df_grid$y)
     # Variables of interest derived from the sample
     all_var <- as.data.frame(t(mapply(circle3_ALL_, xy$a1, xy$a2)))
     nb_var <- length(all_var) # number of variables of interest
@@ -188,17 +226,21 @@ f_boot <- function(df_sample, B, nb_var){
   # B: number of bootstrap samples made thanks to df_sample;
   # nb_var: number of variables of interest (for totals and not ratios)
   
-  df_boot <- data.frame(useless = rep(0, nrow(df_sample)-1))
+  df_boot <- data.frame(useless = rep(0, nrow(df_sample)/2)) # Only one out of 2 values
   for (b in 1:B) {
-    nb <- sample(1:nrow(df_sample), (nrow(df_sample)-1), replace = TRUE)
-    # (n-1) points at random
+    nb <- c()
+    for (stratum in 1:(nrow(df_sample)/2)) {
+      strat_res <- sample(c(stratum*2-1, stratum*2), 1)
+      nb <- append(nb, strat_res)
+    }
+    # (n/2) points at random
     sample_b <- df_sample[nb,]
     df_boot <- cbind(df_boot, sample_b)
     colnames(df_boot)[((b-1)*(nb_var+2)+1 + 1):(b*(nb_var+2)+1)] <- as.vector(mapply(function(j){paste("ech", b, colnames(df_sample)[j], sep = "")}, 1:(nb_var+2)))
   }
   df_boot$useless <- NULL
   return(df_boot)
-  # Return a data frame with B samples of (nb_var+2) variables and of size (n-1)
+  # Return a data frame with B samples of (nb_var+2) variables and of size (n/2)
 }
 ```
 
@@ -209,17 +251,17 @@ est_boot <- function(df, p, nb_var){
   # p: inclusion density function (constant in the uniform case)
   # nb_var: number of variables of interest (for totals and not ratios)
   
-  n <- nrow(df) + 1 # sample size of the initial sample
+  n <- nrow(df)*2 # sample size of the initial sample
   nboot <- length(df)/(nb_var+2) # number of bootstrap samples
   big_est <- as.data.frame(matrix(NA, ncol = nb_var, nrow = nboot))
   
   # Estimations of totals
   for (c in 1:nboot) {
     big_est <- mapply(function(vec_, j){
-        vec_[c] <- (n/(n-1))*sum(df[, 2 + j + ((nb_var+2)*(c-1))]/p)
+        vec_[c] <- (2)*sum(df[, 2 + j + ((nb_var+2)*(c-1))]/p)
         return(as.data.frame(vec_))
         }, big_est, 1:nb_var)
-    # (n/(n-1)) is the correction needed since we choose only (n-1) points
+    # (2) is the correction needed since we choose only (n/2) points
   }
   # Estimations of ratios
   l_big_est <- length(big_est)
@@ -252,8 +294,9 @@ MC_boot <- function(n, B1, B2){
   BOOT_var <- list() # Variances
   BOOT_CI <- list() # Confidence Intervals
   for (b in 1:B1) { # One MC iteration at a time
-    # Uniform sampling over the whole territory
-    xy <- data.frame(a1 = runif(n, 0, 1000), a2 = runif(n, 0, 1000))
+    # Sampling in the territory
+    df_grid <- sampling_grid(i,c_dim)
+    xy <- data.frame(a1 = df_grid$x, a2 = df_grid$y)
     # Variables of interest derived from the sample
     all_var <- as.data.frame(t(mapply(circle3_ALL_, xy$a1, xy$a2)))
     nb_var <- length(all_var) # number of variables of interest
@@ -314,7 +357,7 @@ MC_boot <- function(n, B1, B2){
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 1000
+B0 <- 10000
 ```
 
 ```{r}
@@ -351,8 +394,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 300
-B2 <- 200
+B1 <- 1000
+B2 <- 400
 ```
 
 ```{r}
@@ -469,7 +512,7 @@ coverage_rate <- function(k){
   for (j in 1:(length(CI_names))) {
     x <- as.data.frame(t(get(x = CI_names[j])))
     # Coverage rate
-    assign( TC_names[j], round((1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ), digits = 2) )
+    assign( TC_names[j], round((1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ), digits = 2))
     TC <- append(TC, get(TC_names[j]))
     # Lower tail
     assign( low_names[j], round((1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ), digits = 2))

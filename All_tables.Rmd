@@ -47,7 +47,7 @@ n <- 1000
 # True values
 real_val <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), nrow(trees[(pi*trees$d130 > 117.5),]), 
   sum(trees$v), sum(trees[(pi*trees$d130 < 70.5),]$v), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), sum(trees[(pi*trees$d130 > 117.5),]$v), 
-  round(sum(trees$v)/nrow(trees), digits = 2), round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 2), round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 2), round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 2)
+  round(sum(trees$v)/nrow(trees), digits = 3), round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 3)
   )
 
 cat("True integrals are the following:\n\nNumber of trees:", real_val[1], "\nTotal volume:", real_val[5], 
@@ -352,7 +352,7 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 
 ```{r}
 B1 <- 10
-B2 <- 10
+B2 <- 9
 ```
 
 ```{r}
