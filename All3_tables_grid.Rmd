@@ -47,22 +47,27 @@ n <- 1000
 # True values
 real_val <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), nrow(trees[(pi*trees$d130 > 117.5),]), 
   sum(trees$v), sum(trees[(pi*trees$d130 < 70.5),]$v), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), sum(trees[(pi*trees$d130 > 117.5),]$v), 
-  round(sum(trees$v)/nrow(trees), digits = 2), round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 2), round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 2), round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 2)
+  sum(trees$v)/nrow(trees), sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),])
   )
 
-cat("True integrals are the following:\n\nNumber of trees:", real_val[1], "\nTotal volume:", real_val[5], 
-    "\nWhich leads to the following ratio \"Total volume / Number of trees\":", real_val[9],
-    "\n\nNumber of small trees:", real_val[2], "\nVolume of small trees:", real_val[6], 
-    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val[10],
-    "\n\nNumber of medium trees:", real_val[3], "\nVolume of medium trees:", real_val[7], 
-    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val[11],
-    "\n\nNumber of big trees:", real_val[4], "\nVolume of big trees:", real_val[8], 
-    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val[12]
+real_val_read <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), nrow(trees[(pi*trees$d130 > 117.5),]), 
+  sum(trees$v), sum(trees[(pi*trees$d130 < 70.5),]$v), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), sum(trees[(pi*trees$d130 > 117.5),]$v), 
+  round(sum(trees$v)/nrow(trees), digits = 3), round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 3)
+  )
+
+cat("True integrals are the following:\n\nNumber of trees:", real_val_read[1], "\nTotal volume:", real_val_read[5], 
+    "\nWhich leads to the following ratio \"Total volume / Number of trees\":", real_val_read[9],
+    "\n\nNumber of small trees:", real_val_read[2], "\nVolume of small trees:", real_val_read[6], 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val_read[10],
+    "\n\nNumber of medium trees:", real_val_read[3], "\nVolume of medium trees:", real_val_read[7], 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val_read[11],
+    "\n\nNumber of big trees:", real_val_read[4], "\nVolume of big trees:", real_val_read[8], 
+    "\nWhich leads to the following ratio \"Volume / Number of trees\":", real_val_read[12]
     )
 ```
 
 ```{r}
-real_df <- data.frame(c("All trees", "Small trees", "Medium trees", "Big trees"), matrix(real_val, nrow = 4))
+real_df <- data.frame(c("All trees", "Small trees", "Medium trees", "Big trees"), matrix(real_val_read, nrow = 4))
 colnames(real_df) <- c("", "Number", "Volume", "Ratio Volume/Number")
 ```
 
