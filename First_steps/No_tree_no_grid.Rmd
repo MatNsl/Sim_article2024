@@ -9,9 +9,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+install.packages("kableExtra")
+```
+
+```{r}
 library(readxl) # to read the initial file
 library(magrittr) # for pipes
 library(tibble) # for add_column and tibble
+library(kableExtra) # To have LaTeX tables based on dataframes
 ```
 
 # Preliminaries
@@ -181,6 +186,8 @@ varTHEO_ind <- half_area/p - (1/n)*(half_area^2)
 # Close to the empirical one
 ```
 
+$V[\hat{\tau}_{y\pi}(S)] = \frac{n}{A} \times \frac{A}{2} - \frac{1}{n} \times (\frac{A}{2})^{2} $
+
 ```{r}
 # Conclusion
 cat("Variance théorique :", varTHEO_ind, "\nEstimation de la variance :", var_ind)
@@ -208,7 +215,6 @@ var_x <- ((1000*1000)/(n-1))*est_x2 - (1/(n-1))*(est_x^2)
 ```
 
 ```{r}
-# f_ind(x,y)^2 = f_ind(x,y)
 varTHEO_x <- val_x2/p - (1/n)*(val_x^2)
 # Theoretical variance: 8.333333e+13, i.e. around 8.341029e+13
 # Close to the estimated one
@@ -352,17 +358,17 @@ true_vs_MC <- function(n, B, f){
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = f_1)
-cat("True integral:", 1e+06, "\nMean of all the estimations:", res[1])
-cat("\n\nTheoretical variance:", varTHEO_area, "\nMonte-Carlo variance:", res[2])
+res1 <- true_vs_MC(n = 1000, B = 1000, f = f_1)
+cat("True integral:", 1e+06, "\nMean of all the estimations:", res1[1])
+cat("\n\nTheoretical variance:", varTHEO_area, "\nMonte-Carlo variance:", res1[2])
 # Totals: 1e+06 and 1e+06 (Equality as always)
 # Variances: 0 and 0 (Equality as always)
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = f_ind)
-cat("True integral:", 500000, "\nMean of all the estimations:", res[1])
-cat("\n\nTheoretical variance:", varTHEO_ind, "\nMonte-Carlo variance:", res[2])
+res2 <- true_vs_MC(n = 1000, B = 1000, f = f_ind)
+cat("True integral:", 500000, "\nMean of all the estimations:", res2[1])
+cat("\n\nTheoretical variance:", varTHEO_ind, "\nMonte-Carlo variance:", res2[2])
 # Ex:
 # True integral: 5e+05 
 # Mean of all the estimations: 499214
@@ -372,14 +378,54 @@ cat("\n\nTheoretical variance:", varTHEO_ind, "\nMonte-Carlo variance:", res[2])
 ```
 
 ```{r}
-res <- true_vs_MC(n = 1000, B = 1000, f = f_x)
-cat("True integral:", 5e+08, "\nMean of all the estimations:", res[1])
-cat("\n\nTheoretical variance:", varTHEO_x, "\nMonte-Carlo variance:", res[2])
+res3 <- true_vs_MC(n = 1000, B = 1000, f = f_x)
+cat("True integral:", 5e+08, "\nMean of all the estimations:", res3[1])
+cat("\n\nTheoretical variance:", varTHEO_x, "\nMonte-Carlo variance:", res3[2])
 # Ex:
 # True integral: 5e+08 
 # Mean of all the estimations: 499874718
 
 # Theoretical variance: 8.333333e+13 
 # Monte-Carlo variance: 7.99389e+13
+```
+# Nice table
+
+```{r}
+# Theoretical variances and values
+VAR_theo <- c(varTHEO_area, varTHEO_ind, varTHEO_x)
+VAL_theo <- c(area, half_area, val_x)
+THEO_df <- as.data.frame(cbind(VAL_theo, VAR_theo))
+```
+
+```{r}
+RES_df <- as.data.frame(rbind(res1,res2,res3))
+```
+
+```{r}
+# `Parameter of interest` = fct_names, 
+
+# Table for comparison
+diff_var <- data.frame(`Difference between totals` = paste0(round(mapply(function(x,y){unlist(100*(max(x,y)-min(x,y))/min(x, y))}, unlist(THEO_df[1]), unlist(RES_df[1])), digits = 3), "%"), `Difference between variances` = paste0(round(mapply(function(x,y){100*(max(x,y)-min(x,y))/min(x,y)}, unlist(THEO_df[2]), unlist(RES_df[2])), digits = 3), "%") )
+# diff_var <- ifelse(diff_var == "NaN%", 0, diff_var)
+diff_var[diff_var == "NaN%"] <- "0%"
+```
+
+```{r}
+tab_var <- diff_var %>%
+  kable("latex", booktabs = FALSE, align = "cc", linesep = c("", "", "",
+  "\\addlinespace"), caption = paste("Assessment of the efficiency with samples with size 1000 and 1000 Monte Carlo iterations"), col.names = gsub("[.]", " ", names(diff_var))) %>%
+  kable_styling(latex_options = "hold_position") %>%
+  row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  collapse_rows(columns = 1, latex_hline = "major")
+```
+
+```{r}
+# The table itself
+tab_var
+```
+
+```{r}
+# The code that produced the table
+cat(tab_var)
 ```
 
