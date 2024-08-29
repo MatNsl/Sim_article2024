@@ -3,6 +3,8 @@
 install.packages("ggplot2")
 library(ggplot2)
 
+library(tidyverse) # for arrange
+
 ### Version 1 -----------
 
 # Create a data frame with the coordinates and colors
@@ -81,7 +83,6 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   ) +
   coord_fixed()  # Ensure squares are not stretched
 
-
 ### Version 2 -----------
 
 # Create a data frame with the coordinates and colors
@@ -105,9 +106,9 @@ sampling_grid <- function(i){
     while (x_init + 10*k < 30) {
       a <- x_init + 10*k
       b <- l
-      cells_x <- append(cells_x, a)
+      cells_x <- append(cells_x, ifelse(j%%23 == 0, 23, a))
       print(a)
-      cells_y <- append(cells_y, b)
+      cells_y <- append(cells_y, ifelse(j%%23 == 0, ((j-(j%%23))/23) - 1, b ))
       print(b)
       k <- k+1
     }
@@ -139,6 +140,7 @@ ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
     panel.grid = element_blank()   # Remove grid lines
   ) +
   coord_fixed()  # Ensure squares are not stretched
+
 
 ### Version 3 -----------
 
@@ -325,3 +327,67 @@ ggplot(grid_data, aes(x = x, y = y, fill = color)) +
     panel.grid = element_blank()   # Remove grid lines
   ) +
   coord_fixed()  # Ensure squares are not stretched
+
+### Strata 3: 2 by 2 ------------
+
+# Create a data frame with the coordinates and colors
+grid_data <- expand.grid(x = 1:30, y = 1:30)  # 30x30 grid
+grid_data$color <- "white"  # Default color for all squares
+
+# Function to sample at random following the grid
+sampling_grid <- function(i){
+  cells_x <- c()
+  cells_y <- c()
+  
+  for (l in 0:29) {
+    if (l==0){
+      x_init <- i
+    }else if ((3*l+i) < 10){
+      x_init <- (3*l+i)
+    }else{
+      x_init <- (((3*l+i))%%(10))
+    }
+    k <- 0
+    while (x_init + 10*k < 30) {
+      a <- x_init + 10*k
+      b <- l
+      cells_x <- append(cells_x, a)
+      print(a)
+      cells_y <- append(cells_y, b)
+      print(b)
+      k <- k+1
+    }
+  }
+  return(data.frame(x = cells_x, y = cells_y))
+}
+
+test <- sampling_grid(3)
+
+# Specify the squares to be colored
+colored_squares <- data.frame(
+  x = test$x,
+  y = test$y +1,
+  color = c(rep("orange", 90))
+)
+
+# Merge the colored squares into the grid data
+grid_data <- merge(grid_data, colored_squares, by = c("x", "y"), all.x = TRUE)
+grid_data$color.y[is.na(grid_data$color.y)] <- "white" # Set NA colors to white
+grid_data <- arrange(grid_data, grid_data$y)
+# 45 strata ((3*30)/2) with 2 selected cells in each of them
+grid_data$number <- NA
+grid_data[grid_data$color.y == "orange",]$number <- rep(1:45, each = 2)
+
+ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
+  geom_tile(colour = "black") +  # Draw the squares with black borders
+  geom_text(aes(label = number), size = 5, na.rm = TRUE) +
+  scale_fill_identity() +  # Use the colors specified in the data
+  theme_minimal() +  # Minimal theme for better visualization
+  theme(
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove grid lines
+  ) +
+  coord_fixed()  # Ensure squares are not stretched
+
