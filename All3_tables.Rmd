@@ -356,8 +356,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 300
-B2 <- 200
+B1 <- 10000
+B2 <- 400
 ```
 
 ```{r}
