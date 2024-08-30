@@ -405,7 +405,7 @@ RES_df <- as.data.frame(rbind(res1,res2,res3))
 # `Parameter of interest` = fct_names, 
 
 # Table for comparison
-diff_var <- data.frame(`Difference between totals` = paste0(round(mapply(function(x,y){unlist(100*(max(x,y)-min(x,y))/min(x, y))}, unlist(THEO_df[1]), unlist(RES_df[1])), digits = 3), "%"), `Difference between variances` = paste0(round(mapply(function(x,y){100*(max(x,y)-min(x,y))/min(x,y)}, unlist(THEO_df[2]), unlist(RES_df[2])), digits = 3), "%") )
+diff_var <- data.frame(`Difference between totals` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[1]), unlist(RES_df[1])), digits = 3), "%"), `Difference between variances` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[2]), unlist(RES_df[2])), digits = 3), "%") )
 # diff_var <- ifelse(diff_var == "NaN%", 0, diff_var)
 diff_var[diff_var == "NaN%"] <- "0%"
 ```
