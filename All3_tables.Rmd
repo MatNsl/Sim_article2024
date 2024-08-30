@@ -319,7 +319,7 @@ MC_boot <- function(n, B1, B2){
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 1000
+B0 <- 10000
 ```
 
 ```{r}
@@ -356,7 +356,7 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 10000
+B1 <- 1000
 B2 <- 400
 ```
 
