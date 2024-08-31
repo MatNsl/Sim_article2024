@@ -358,7 +358,7 @@ MC_boot <- function(n, B1, B2){
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 10000
+B0 <- 10 #10000
 ```
 
 ```{r}
@@ -395,8 +395,8 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 1000
-B2 <- 400
+B1 <- 5 # 1000
+B2 <- 5 # 400
 ```
 
 ```{r}
@@ -483,6 +483,51 @@ cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", V
     "\n\n - for the number of big trees:", VAR_df[4], "\n - for the volume of big trees:", VAR_df[8], "\n - for the ratio volume / number of trees:", VAR_df[12])
 
 # Example:
+```
+
+```{r}
+# Relative stability
+RS <- function(list_var, target_var){
+  # 
+  in_sum <- c()
+  for (elt in list_var) {
+    in_sum <- append(in_sum, (elt - target_var)**2)
+  }
+  return(100*(((1/length(list_var))*sum(in_sum))**(1/2))/target_var)
+}
+```
+
+```{r}
+VAR_boot <- list()
+for (j in VAR_names) {
+  VAR_boot[[length(VAR_boot)+1]] <- get(x = j)
+}
+
+rs_df <- mapply(RS, VAR_boot, res1$Variances)
+```
+
+```{r}
+# Table for comparison
+DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(round(rs_df, digits = 3), "%") )
+```
+
+```{r}
+tab_rs <- DF_rs %>%
+  kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
+  "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
+  kable_styling(latex_options = "hold_position") %>%
+  row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  collapse_rows(columns = 1, latex_hline = "major")
+```
+
+```{r}
+# The table itself
+tab_rs
+```
+
+```{r}
+# The code that produced the table
+cat(tab_rs)
 ```
 
 ```{r}
