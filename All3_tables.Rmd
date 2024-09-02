@@ -97,6 +97,11 @@ cat(tab_real)
 raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "vol_b", "ratio", "ratio_s", "ratio_m", "ratio_b")
 ```
 
+```{r}
+# All the names of the parameters of interest, explicitly
+PARAM_names <- c("Number of trees", "Number of small trees", "Number of medium trees", "Number of big trees", "Volume of trees", "Volume of small trees", "Volume of medium trees", "Volume of big trees", "Ratio for all trees", "Ratio for small trees", "Ratio for medium trees", "Ratio for big trees")
+```
+
 # Functions
 
 ## Monte Carlo alone
@@ -545,7 +550,6 @@ cat("Concerning the BCa approach, the coverage rates are the following: \n - for
 ### Clean data frame to create a LaTeX table
 
 df_total <- data.frame(Parameter.of.interest = character(0), Method = character(0), TC = numeric(0), Lower = numeric(0), Upper = numeric(0), Mean_length = numeric(0))
-PARAM_names <- c("Number of trees", "Number of small trees", "Number of medium trees", "Number of big trees", "Volume of trees", "Volume of small trees", "Volume of medium trees", "Volume of big trees", "Ratio for all trees", "Ratio for small trees", "Ratio for medium trees", "Ratio for big trees")
 meth_nam <- c("Normal", "Percentile", "Reverse Percentile", "BCa")
 
 for (param in 1:12) {
@@ -584,8 +588,9 @@ cat(tab_ci)
 ## Comparison of the variances
 
 ```{r}
-diff_percent <- function(j){unlist(100*(max(res1$Variances[j],VAR_df[j])-min(res1$Variances[j],VAR_df[j]))/min(res1$Variances[j],VAR_df[j]))}
-cat("Difference between the two estimations of variance: \n - for the number of trees: ", diff_percent(1), "%", "\n - for the volume of trees: ", diff_percent(5), "%\n - for the ratio volume / number of trees: ", diff_percent(9), "%", 
+diff_percent <- function(j){unlist(100*(VAR_df[j]-res1$Variances[j])/res1$Variances[j])}
+# function(x,y){unlist(100*(y-x)/x)}
+cat("Relative Bias of the variance: \n - for the number of trees: ", diff_percent(1), "%", "\n - for the volume of trees: ", diff_percent(5), "%\n - for the ratio volume / number of trees: ", diff_percent(9), "%", 
     "\n\n - for the number of small trees: ", diff_percent(2), "%", "\n - for the volume of small trees: ", diff_percent(6), "%", "\n - for the ratio volume / number of trees: ", diff_percent(10), "%",
     "\n\n - for the number of medium trees: ", diff_percent(3), "%", "\n - for the volume of medium trees: ", diff_percent(7), "%", "\n - for the ratio volume / number of trees: ", diff_percent(11), "%",
     "\n\n - for the number of big trees: ", diff_percent(4), "%", "\n - for the volume of big trees: ", diff_percent(8), "%", "\n - for the ratio volume / number of trees: ", diff_percent(12), "%",
@@ -596,7 +601,7 @@ cat("Difference between the two estimations of variance: \n - for the number of 
 
 ```{r}
 # Table for comparison
-diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Difference between variances` = paste0(round(mapply(function(x,y){100*(max(x,y)-min(x,y))/min(x,y)}, VAR_df, res1$Variances), digits = 3), "%") )
+diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Relative Bias` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, res1$Variances, VAR_df), digits = 3), "%") )
 ```
 
 ```{r}
