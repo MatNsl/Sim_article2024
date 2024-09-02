@@ -3,6 +3,7 @@ title: "Monte Carlo and bootstrap for ALL parameters with tables"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 date: "2024-08-16"
 ---
 
@@ -524,6 +525,7 @@ tab_rs <- DF_rs %>%
   "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  row_spec(c(0, 4, 8), hline_after = T) %>% 
   collapse_rows(columns = 1, latex_hline = "major")
 ```
 
@@ -695,6 +697,7 @@ tab_var <- diff_var %>%
   "\\addlinespace"), caption = paste("Comparison of the two methods when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  row_spec(c(0, 4, 8), hline_after = T) %>% 
   collapse_rows(columns = 1, latex_hline = "major")
 ```
 

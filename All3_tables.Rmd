@@ -452,6 +452,52 @@ cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", V
 ```
 
 ```{r}
+# Relative stability
+RS <- function(list_var, target_var){
+  # 
+  in_sum <- c()
+  for (elt in list_var) {
+    in_sum <- append(in_sum, (elt - target_var)**2)
+  }
+  return(100*(((1/length(list_var))*sum(in_sum))**(1/2))/target_var)
+}
+```
+
+```{r}
+VAR_boot <- list()
+for (j in VAR_names) {
+  VAR_boot[[length(VAR_boot)+1]] <- get(x = j)
+}
+
+rs_df <- mapply(RS, VAR_boot, res1$Variances)
+```
+
+```{r}
+# Table for comparison
+DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(round(rs_df, digits = 3), "%") )
+```
+
+```{r}
+tab_rs <- DF_rs %>%
+  kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
+  "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
+  kable_styling(latex_options = "hold_position") %>%
+  row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  row_spec(c(0, 4, 8), hline_after = T) %>% 
+  collapse_rows(columns = 1, latex_hline = "major")
+```
+
+```{r}
+# The table itself
+tab_rs
+```
+
+```{r}
+# The code that produced the table
+cat(tab_rs)
+```
+
+```{r}
 coverage_rate <- function(k){
   # k: integer to target one specific method to create confidence intervals
   
@@ -610,6 +656,7 @@ tab_var <- diff_var %>%
   "\\addlinespace"), caption = paste("Comparison of the two methods when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
+  row_spec(c(0, 4, 8), hline_after = T) %>% 
   collapse_rows(columns = 1, latex_hline = "major")
 ```
 
