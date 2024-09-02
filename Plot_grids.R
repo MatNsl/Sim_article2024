@@ -215,7 +215,7 @@ sampling_grid <- function(i){
     while (x_init + 10*k < 30) {
       a <- x_init + 10*k
       b <- l
-      cells_x <- append(cells_x, a)
+      cells_x <- append(cells_x, ifelse(a%%30 == 0, 30, a))
       # print(a)
       cells_y <- append(cells_y, b)
       # print(b)
@@ -284,7 +284,7 @@ sampling_grid <- function(i){
       a <- x_init + 10*k
       b <- l
       h <- (length(cells_x)+1)%%10
-      cells_x <- append(cells_x, a)
+      cells_x <- append(cells_x, ifelse(a%%30 == 0, 30, a))
       # print(a)
       cells_y <- append(cells_y, b)
       # print(b)
