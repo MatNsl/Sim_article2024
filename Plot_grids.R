@@ -154,7 +154,7 @@ sampling_grid <- function(c_dim){
   
   for (l in 0:((30)-1)) { # For all lines
     for (bunch in 1:(30/10)) { # 10 is the size of each bunch
-      x_sampled <- sample(0:9, 1) + (bunch-1)*10
+      x_sampled <- sample(1:10, 1) + (bunch-1)*10
       a <- x_sampled
       b <- l
       random_points <- rbind(random_points, list(a,b))
