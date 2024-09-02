@@ -106,9 +106,9 @@ sampling_grid <- function(i){
     while (x_init + 10*k < 30) {
       a <- x_init + 10*k
       b <- l
-      cells_x <- append(cells_x, ifelse(j%%23 == 0, 23, a))
+      cells_x <- append(cells_x, ifelse(a%%30 == 0, 30, a))
       print(a)
-      cells_y <- append(cells_y, ifelse(j%%23 == 0, ((j-(j%%23))/23) - 1, b ))
+      cells_y <- append(cells_y, b) # ifelse(a%%23 == 0, b - 1, b )
       print(b)
       k <- k+1
     }
@@ -351,7 +351,7 @@ sampling_grid <- function(i){
     while (x_init + 10*k < 30) {
       a <- x_init + 10*k
       b <- l
-      cells_x <- append(cells_x, a)
+      cells_x <- append(cells_x, ifelse(a%%30 == 0, 30, a))
       print(a)
       cells_y <- append(cells_y, b)
       print(b)
@@ -380,7 +380,7 @@ grid_data[grid_data$color.y == "orange",]$number <- rep(1:45, each = 2)
 
 ggplot(grid_data, aes(x = x, y = y, fill = color.y)) +
   geom_tile(colour = "black") +  # Draw the squares with black borders
-  geom_text(aes(label = number), size = 5, na.rm = TRUE) +
+  geom_text(aes(label = number), size = 3, na.rm = TRUE) +
   scale_fill_identity() +  # Use the colors specified in the data
   theme_minimal() +  # Minimal theme for better visualization
   theme(
