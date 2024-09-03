@@ -1,6 +1,8 @@
 ---
 title: "Monte Carlo and bootstrap for ALL parameters with tables"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 date: "2024-08-16"
 ---
 
