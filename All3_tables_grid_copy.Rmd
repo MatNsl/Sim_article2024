@@ -637,11 +637,11 @@ rs_df <- mapply(RS, VAR_boot, res1$Variances)
 DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(round(rs_df, digits = 2), "%") )
 ```
 
-```{r}
+```{r RS_algo8}
 tab_rs <- DF_rs %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
   "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
-  kable_styling(latex_options = "hold_position") %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", full_width = FALSE, 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
   collapse_rows(columns = 1, latex_hline = "major")
@@ -725,9 +725,9 @@ for (param in 1:8) {
 colnames(df_total1) <- c("Parameter of interest", "Method", "Coverage rate", "Lower part", "Upper part", "Mean length")
 ```
 
-```{r}
+```{r CI_tot_algo8}
 tab_ci1 <- df_total1 %>%
-  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>%
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (totals)")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>%
   row_spec(c(0, 16), hline_after = T) %>% 
@@ -765,9 +765,9 @@ for (param in 9:12) {
 colnames(df_total2) <- c("Parameter of interest", "Method", "Coverage rate", "Lower part", "Upper part", "Mean length")
 ```
 
-```{r}
+```{r CI_ratio_algo8}
 tab_ci2 <- df_total2 %>%
-  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications")) %>%
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (ratios)")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>%
   row_spec(c(0), hline_after = T) %>% 
@@ -803,11 +803,11 @@ cat("Relative Bias of the variance: \n - for the number of trees: ", diff_percen
 diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Monte Carlo Relative Bias` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, res1$Variances, VAR_df), digits = 2), "%") )
 ```
 
-```{r}
+```{r RB_algo8}
 tab_var <- diff_var %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
-  "\\addlinespace"), caption = paste("Approximation of Relative Bias when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
-  kable_styling(latex_options = "hold_position") %>%
+  "\\addlinespace"), caption = paste0("Approximation of Relative Bias when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
+  kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
   collapse_rows(columns = 1, latex_hline = "major")
