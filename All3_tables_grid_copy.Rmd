@@ -41,10 +41,7 @@ trees <- all_trees[(pi*all_trees$d130 > 23.5),]
 source("~/work/Sim_article2024/Useful_functions/Circle.R")
 ```
 
-```{r}
-# Sample size
-n <- 1000
-```
+## Target values
 
 ```{r}
 # True values
@@ -93,6 +90,8 @@ tab_real
 cat(tab_real)
 ```
 
+## Useful character vectors
+
 ```{r}
 # For each sampled point of each sample, there will be the following information:
 # Coordinates, number of trees for each category, volume of trees for each category, ratios for each category
@@ -103,6 +102,13 @@ raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "
 ```{r}
 # All the names of the parameters of interest, explicitly
 PARAM_names <- c("Number of trees", "Number of small trees", "Number of medium trees", "Number of big trees", "Volume of trees", "Volume of small trees", "Volume of medium trees", "Volume of big trees", "Ratio for all trees", "Ratio for small trees", "Ratio for medium trees", "Ratio for big trees")
+```
+
+## Values and functions necessary to sample
+
+```{r}
+# Sample size
+n <- 1000
 ```
 
 ```{r}
@@ -117,9 +123,37 @@ c_dim <- 10
 ```
 
 ```{r}
+# Uniform sampling, no grid
+sampling_unif <- function(i,c_dim){
+  random_points <- data.frame(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+  return(random_points)
+}
+```
+
+```{r}
+# Function to sample at random following the grid
+# Algorithm 6 in the report (2024/10/02 version)
+sampling_grid1 <- function(i, c_dim){
+  cells_x <- c()
+  cells_y <- c()
+  raw <- c()
+  elt <- i
+  while (elt < (1000*1000)) {
+    raw <- append(raw, elt)
+    elt <- elt+10
+  }
+  for (j in raw) {
+    cells_x <- append(cells_x, ifelse(j%%23 == 0, 23, j%%23))
+    cells_y <- append(cells_y, ifelse(j%%23 == 0, ((j-(j%%23))/23) - 1, (j-(j%%23))/23) )
+  }
+  return(data.frame(x = cells_x, y = cells_y))
+}
+```
+
+```{r}
 # Function to sample at random following the grid
 # Algorithm 7 in the report (2024/10/02 version)
-sampling_grid1 <- function(i,c_dim){
+sampling_grid2 <- function(i,c_dim){
 random_points <- data.frame(x = numeric(), y = numeric())
 
 for (l in 0:((1000/c_dim)-1)) {
@@ -146,7 +180,7 @@ return(random_points)
 ```{r}
 # A more random algorithm
 # Algorithm 8 in the report (2024/10/02 version)
-sampling_grid2 <- function(i, c_dim){
+sampling_grid3 <- function(i, c_dim){
   random_points <- data.frame(x = numeric(), y = numeric())
   
   for (l in 0:((1000/c_dim)-1)) { # For all lines
@@ -162,7 +196,6 @@ sampling_grid2 <- function(i, c_dim){
   colnames(random_points) <- list("x", "y")
   return(random_points)
 }
-
 ```
 
 # Functions
@@ -384,18 +417,97 @@ MC_boot <- function(n, B1, B2, f_sampling){
 }
 ```
 
-# Example
+## Other useful functions
+
+```{r}
+# Relative stability
+RS <- function(list_var, target_var){
+  # 
+  in_sum <- c()
+  for (elt in list_var) {
+    in_sum <- append(in_sum, (elt - target_var)**2)
+  }
+  return(100*(((1/length(list_var))*sum(in_sum))**(1/2))/target_var)
+}
+```
+
+```{r}
+# Based on MC_boot results
+coverage_rate <- function(k, res2){
+  # k: integer to target one specific method to create confidence intervals
+  # res2: results from MC_boot
+  
+  nam_lim <- paste0("lim_", raw_names)[-(1:2)]
+  CI_names <- paste0("CI_", raw_names)[-(1:2)]
+  TC_names <- paste0("TC_", raw_names)[-(1:2)]
+  low_names <- paste0("low_", raw_names)[-(1:2)]
+  up_names <- paste0("up_", raw_names)[-(1:2)]
+  length_names <- paste0("length_", raw_names)[-(1:2)]
+  
+  for (j in CI_names) {
+    assign(j, data.frame(matrix(numeric(0), nrow = 2)))
+  }
+  for (elt in res2$`Confidence Intervals`) { # For each MC iteration
+    for (j in 1:length(CI_names)) { # For each estimation
+      x <- cbind(get(x = CI_names[j]), elt[k][[1]][colnames(elt[k][[1]]) == nam_lim[j]]) # elt[k]
+      assign(CI_names[j], x)
+    }
+  }
+  
+  TC <- c()
+  Lower <- c()
+  Upper <- c()
+  Mean_length <- c()
+  for (j in 1:(length(CI_names))) {
+    x <- as.data.frame(t(get(x = CI_names[j])))
+    # Coverage rate
+    assign( TC_names[j], (1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ))
+    TC <- append(TC, get(TC_names[j]))
+    # Lower tail
+    assign( low_names[j], (1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ))
+    Lower <- append(Lower, get(low_names[j]))
+    # Upper tail
+    assign( up_names[j], (1/nrow(x))*sum( mapply(function(b){as.numeric(real_val[j] > b)}, x[2]) ))
+    Upper <- append(Upper, get(up_names[j]))
+    # Mean length of CIs
+    assign( length_names[j], (1/nrow(x))*sum( mapply(function(a,b){b-a}, x[1], x[2]) ))
+    Mean_length <- append(Mean_length, get(length_names[j]))
+  }
+  
+  df_TC <- data.frame(TC, Lower, Upper, Mean_length)
+  
+  return(df_TC)
+}
+```
+
+# Examples
+
+```{r}
+# Monte carlo alone
+# Number of MC iterations
+B0 <- 10000 # 10 # 
+```
+
+```{r}
+# Monte Carlo and bootstrap
+# Number of MC iterations
+B1 <- 1000 # 5 # 
+# Number of bootstrap replications
+B2 <- 400 # 5 # 
+```
+
+# Example: Algorithm 8
 
 ## Monte Carlo alone
 
 ```{r}
-B0 <- 10000 # 10 # 
+fun_samp <- sampling_grid3
 ```
 
 ```{r}
 start.time <- Sys.time()
 
-res1 <- MonteCarlo(n, B0, sampling_grid2)
+res1 <- MonteCarlo(n, B0, fun_samp)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -426,14 +538,9 @@ cat("Monte Carlo variances: \n - for the number of trees:", res1$Variances[1], "
 ## Monte Carlo and bootstrap
 
 ```{r}
-B1 <- 1000 # 5
-B2 <- 400 # 5
-```
-
-```{r}
 start.time <- Sys.time()
 
-res2 <- MC_boot(n, B1, B2, sampling_grid2)
+res2 <- MC_boot(n, B1, B2, fun_samp)
 # Just one circle to begin with
 
 end.time <- Sys.time()
@@ -517,18 +624,6 @@ cat("Mean of the variance of bootstrap samples:\n - for the number of trees:", V
 ```
 
 ```{r}
-# Relative stability
-RS <- function(list_var, target_var){
-  # 
-  in_sum <- c()
-  for (elt in list_var) {
-    in_sum <- append(in_sum, (elt - target_var)**2)
-  }
-  return(100*(((1/length(list_var))*sum(in_sum))**(1/2))/target_var)
-}
-```
-
-```{r}
 VAR_boot <- list()
 for (j in VAR_names) {
   VAR_boot[[length(VAR_boot)+1]] <- get(x = j)
@@ -563,54 +658,7 @@ cat(tab_rs)
 ```
 
 ```{r}
-coverage_rate <- function(k){
-  # k: integer to target one specific method to create confidence intervals
-  
-  nam_lim <- paste0("lim_", raw_names)[-(1:2)]
-  CI_names <- paste0("CI_", raw_names)[-(1:2)]
-  TC_names <- paste0("TC_", raw_names)[-(1:2)]
-  low_names <- paste0("low_", raw_names)[-(1:2)]
-  up_names <- paste0("up_", raw_names)[-(1:2)]
-  length_names <- paste0("length_", raw_names)[-(1:2)]
-  
-  for (j in CI_names) {
-    assign(j, data.frame(matrix(numeric(0), nrow = 2)))
-  }
-  for (elt in res2$`Confidence Intervals`) { # For each MC iteration
-    for (j in 1:length(CI_names)) { # For each estimation
-      x <- cbind(get(x = CI_names[j]), elt[k][[1]][colnames(elt[k][[1]]) == nam_lim[j]]) # elt[k]
-      assign(CI_names[j], x)
-    }
-  }
-  
-  TC <- c()
-  Lower <- c()
-  Upper <- c()
-  Mean_length <- c()
-  for (j in 1:(length(CI_names))) {
-    x <- as.data.frame(t(get(x = CI_names[j])))
-    # Coverage rate
-    assign( TC_names[j], (1/nrow(x))*sum( mapply(function(a,b){as.numeric((real_val[j] > a) & (real_val[j] < b))}, x[1], x[2]) ))
-    TC <- append(TC, get(TC_names[j]))
-    # Lower tail
-    assign( low_names[j], (1/nrow(x))*sum( mapply(function(a){as.numeric(real_val[j] < a)}, x[1]) ))
-    Lower <- append(Lower, get(low_names[j]))
-    # Upper tail
-    assign( up_names[j], (1/nrow(x))*sum( mapply(function(b){as.numeric(real_val[j] > b)}, x[2]) ))
-    Upper <- append(Upper, get(up_names[j]))
-    # Mean length of CIs
-    assign( length_names[j], (1/nrow(x))*sum( mapply(function(a,b){b-a}, x[1], x[2]) ))
-    Mean_length <- append(Mean_length, get(length_names[j]))
-  }
-  
-  df_TC <- data.frame(TC, Lower, Upper, Mean_length)
-  
-  return(df_TC)
-}
-```
-
-```{r}
-TC_normal <- coverage_rate(1)
+TC_normal <- coverage_rate(1, res2)
 cat("Concerning the normal approach, the coverage rates are the following: \n - for the number of trees: ", 
     TC_normal[1,1], "\n - for the volume of trees: ", TC_normal[2,1], "\n - for the ratio volume / number of trees: ", TC_normal[3,1],
     " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
@@ -622,7 +670,7 @@ cat("Concerning the normal approach, the coverage rates are the following: \n - 
 ```
 
 ```{r}
-TC_perc <- coverage_rate(2)
+TC_perc <- coverage_rate(2, res2)
 cat("Concerning the percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
     TC_perc[1,1], "\n - for the volume of trees: ", TC_perc[2,1], "\n - for the ratio volume / number of trees: ", TC_perc[3,1],
     " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
@@ -634,7 +682,7 @@ cat("Concerning the percentile approach, the coverage rates are the following: \
 ```
 
 ```{r}
-TC_rev_perc <- coverage_rate(3)
+TC_rev_perc <- coverage_rate(3, res2)
 cat("Concerning the reverse percentile approach, the coverage rates are the following: \n - for the number of trees: ", 
     TC_rev_perc[1,1], "\n - for the volume of trees: ", TC_rev_perc[2,1], "\n - for the ratio volume / number of trees: ", TC_rev_perc[3,1],
     " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
@@ -646,7 +694,7 @@ cat("Concerning the reverse percentile approach, the coverage rates are the foll
 ```
 
 ```{r}
-TC_bca <- coverage_rate(4)
+TC_bca <- coverage_rate(4, res2)
 cat("Concerning the BCa approach, the coverage rates are the following: \n - for the number of trees: ", 
     TC_bca[1,1], "\n - for the volume of trees: ", TC_bca[2,1], "\n - for the ratio volume / number of trees: ", TC_bca[3,1],
     " \n\nThe parts of the estimators under the lower limit of the coverage rate are the following: \n - for the number of trees: ",
