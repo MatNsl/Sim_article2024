@@ -1118,7 +1118,7 @@ for (param in 1:8) {
   df_total1 <- rbind(df_total1, df_param)
 }
 
-colnames(df_total1) <- c("Parameter of interest", "Method", "Coverage rate", "Lower part", "Upper part", "Mean length")
+colnames(df_total1) <- c("Parameter of interest", "Method", "Coverage rate", "L", "U", "Mean length")
 ```
 
 ```{r CI_tot_algo8_strat}
@@ -1158,7 +1158,7 @@ for (param in 9:12) {
   df_total2 <- rbind(df_total2, df_param)
 }
 
-colnames(df_total2) <- c("Parameter of interest", "Method", "Coverage rate", "Lower part", "Upper part", "Mean length")
+colnames(df_total2) <- c("Parameter of interest", "Method", "Coverage rate", "L", "U", "Mean length")
 ```
 
 ```{r CI_ratio_algo8_strat}
