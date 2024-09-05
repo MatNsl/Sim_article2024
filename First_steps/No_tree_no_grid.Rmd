@@ -1,6 +1,8 @@
 ---
 title: "Uniform sampling across the whole territory without any cells"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 date: "2024-06-25"
 ---
 
@@ -348,11 +350,16 @@ true_vs_MC <- function(n, B, f){
   
   # 3rd step: List of estimated totals thus obtained from each sample
   est_MC <- c()
+  var_est <- c()
   for (c in 1:B) {
     est_MC <- append(est_MC, sum((rho_MC[c])/p))
+    in_sum <- unlist(mapply(function(x){((x*area) - sum((rho_MC[c])/p))^2}, rho_MC[c]))
+    var_est <- append(var_est, (1/(n*(n-1)))*sum(in_sum))
   }
   
-  return(c(mean(est_MC), var(est_MC)))
+  # var_est <- (1/(n(n-1)))*sum(in_sum)
+  
+  return(c(mean(est_MC), mean(var_est))) # , var(est_MC)
   # Estimated value and Monte-Carlo variance
 }
 ```
@@ -405,14 +412,13 @@ RES_df <- as.data.frame(rbind(res1,res2,res3))
 # `Parameter of interest` = fct_names, 
 
 # Table for comparison
-diff_var <- data.frame(`Difference between totals` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[1]), unlist(RES_df[1])), digits = 3), "%"), `Difference between variances` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[2]), unlist(RES_df[2])), digits = 3), "%") )
-# diff_var <- ifelse(diff_var == "NaN%", 0, diff_var)
-diff_var[diff_var == "NaN%"] <- "0%"
+diff_var <- data.frame(Functions = c("$(x_1,x_2) \\mapsto 1$", "$(x_1,x_2) \\mapsto \\mathds{1} \\{x_1>x_2\\}$", "$(x_1,x_2) \\mapsto x_1$"), `Difference between totals` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[1]), unlist(RES_df[1])), digits = 2), "\\%"), `Difference between variances` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, unlist(THEO_df[2]), unlist(RES_df[2])), digits = 2), "\\%") )
+diff_var[diff_var == "NaN\\%"] <- "0\\%" # In case unlist(THEO_df[X]) == 0
 ```
 
-```{r}
+```{r MC_simple}
 tab_var <- diff_var %>%
-  kable("latex", booktabs = FALSE, align = "cc", linesep = c("", "", "",
+  kable("latex", escape = FALSE, booktabs = FALSE, align = "cc", linesep = c("", "", "",
   "\\addlinespace"), caption = paste("Assessment of the efficiency with samples with size 1000 and 1000 Monte Carlo iterations"), col.names = gsub("[.]", " ", names(diff_var))) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
