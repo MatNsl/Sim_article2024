@@ -895,7 +895,7 @@ cat(tab_var)
 # Example: Algorithm 7 with stratified bootstrap
 
 ```{r}
-fun_samp <- sampling_grid1
+fun_samp <- sampling_grid2
 ```
 
 ## Monte Carlo alone
