@@ -137,19 +137,23 @@ sampling_unif <- function(i,c_dim){
 # Function to sample at random following the grid
 # Algorithm 6 in the report (2024/10/02 version)
 sampling_grid1 <- function(i, c_dim){
+  # i = 1,...,10
   cells_x <- c()
   cells_y <- c()
   raw <- c()
-  elt <- i
-  while (elt < (1000*1000)) {
+  elt <- (i-1)*10
+  while (elt < (100*1000)) {
     raw <- append(raw, elt)
-    elt <- elt+10
+    elt <- elt+100
   }
   for (j in raw) {
-    cells_x <- append(cells_x, ifelse(j%%23 == 0, 23, j%%23))
-    cells_y <- append(cells_y, ifelse(j%%23 == 0, ((j-(j%%23))/23) - 1, (j-(j%%23))/23) )
+    cells_x <- append(cells_x, ifelse(j%%1000 == 0, 1000, j%%1000))
+    cells_y <- append(cells_y, ifelse(j%%1000 == 0, ((j-(j%%1000))/1000) - 1, (j-(j%%1000))/1000) )
   }
-  return(data.frame(x = cells_x, y = cells_y))
+  cells_y <- cells_y*10
+  a <- mapply(function(x){runif(1, x, x+10)}, cells_x)
+  b <- mapply(function(x){runif(1, x, x+10)}, cells_y)
+  return(data.frame(x = a, y = b))
 }
 ```
 
@@ -157,6 +161,8 @@ sampling_grid1 <- function(i, c_dim){
 # Function to sample at random following the grid
 # Algorithm 7 in the report (2024/10/02 version)
 sampling_grid2 <- function(i,c_dim){
+  # i = 1,...,10
+  i <- i-1
 random_points <- data.frame(x = numeric(), y = numeric())
 
 for (l in 0:((1000/c_dim)-1)) {
