@@ -574,7 +574,7 @@ B1 <- 1000 # 5 #
 B2 <- 400 # 5 # 
 ```
 
-# Example: Algorithm 6 with basic bootstrap
+# Example: Uniform sampling with basic bootstrap
 
 ```{r}
 fun_samp <- sampling_unif
