@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 The goal of this document is to create a large number of Monte Carlo iterations to produce estimators (for the number of trees, the volume of trees, the ratio volume of trees / number of trees as well as for \textbf{other totals and ratios}) and variances of these estimators. The same elements, along with confidence intervals, are also computed for each bootstrap series derived from a smaller number of Monte Carlo iterations. By comparing the two results, we may ensure the validity of the bootstrap strategy to find the estimation of the variances. We may also compare the coverage rates of each type of confidence interval.
 
 
-In this document, \textbf{sampling through a grid} is used to create a sample, more precisely \textbf{algorithm 6}, and \textbf{three concentric circles} are used to compute local variables.
+In this document, \textbf{uniform sampling} is used to create a sample and \textbf{three concentric circles} are used to compute local variables.
 
 
 \textbf{Basic bootstrap} is used.
@@ -577,7 +577,7 @@ B2 <- 400 # 5 #
 # Example: Algorithm 6 with basic bootstrap
 
 ```{r}
-fun_samp <- sampling_grid1
+fun_samp <- sampling_unif
 ```
 
 ## Monte Carlo alone
@@ -715,7 +715,7 @@ rs_df <- mapply(RS, VAR_boot, res1$Variances)
 DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(round(rs_df, digits = 2), "%") )
 ```
 
-```{r RS_algo6}
+```{r RS_unif}
 tab_rs <- DF_rs %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
   "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
@@ -803,7 +803,7 @@ for (param in 1:8) {
 colnames(df_total1) <- c("Parameter of interest", "Method", "Coverage rate", "L", "U", "Mean length")
 ```
 
-```{r CI_tot_algo6}
+```{r CI_tot_unif}
 tab_ci1 <- df_total1 %>%
   kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (totals)")) %>%
   kable_styling(latex_options = "hold_position") %>%
@@ -843,7 +843,7 @@ for (param in 9:12) {
 colnames(df_total2) <- c("Parameter of interest", "Method", "Coverage rate", "L", "U", "Mean length")
 ```
 
-```{r CI_ratio_algo6}
+```{r CI_ratio_unif}
 tab_ci2 <- df_total2 %>%
   kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (ratios)")) %>%
   kable_styling(latex_options = "hold_position") %>%
@@ -881,7 +881,7 @@ cat("Relative Bias of the variance: \n - for the number of trees: ", diff_percen
 diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Monte Carlo Relative Bias` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, res1$Variances, VAR_df), digits = 2), "%") )
 ```
 
-```{r RB_algo6}
+```{r RB_unif}
 tab_var <- diff_var %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
   "\\addlinespace"), caption = paste0("Approximation of Relative Bias when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
