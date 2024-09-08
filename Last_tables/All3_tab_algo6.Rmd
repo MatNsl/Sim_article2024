@@ -560,15 +560,15 @@ coverage_rate <- function(k, res2){
 ```{r}
 # Monte carlo alone
 # Number of MC iterations
-B0 <- 10 # 10000 # 
+B0 <- 10000 # 10 # 
 ```
 
 ```{r}
 # Monte Carlo and bootstrap
 # Number of MC iterations
-B1 <- 5 # 1000 # 
+B1 <- 1000 # 5 # 
 # Number of bootstrap replications
-B2 <- 5 # 400 # 
+B2 <- 400 # 5 # 
 ```
 
 # Example: Algorithm 6 with basic bootstrap
