@@ -13,8 +13,8 @@ To develop some bootstrap method for a continuous sampling frame, which could be
 "Data" contains the database already described by Chauvet et alii (2023).
 "Plots" contains pdf files used for illustration.
 "Useful_functions" contains functions needed to compute local variables based on the weight share method.
-"Firs_steps" contains the very first files created to comprehend the subject.
+"First_steps" contains the very first files created to comprehend the subject.
 "Draft" contains old files with diverse pieces of code.
 "Last_tables" contains the ultimate files that produced results.
 
-The bibliography "Biblio.md" is incomplete.
+Note that the bibliography "Biblio.md" is incomplete.
