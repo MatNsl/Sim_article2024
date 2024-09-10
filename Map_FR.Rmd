@@ -33,12 +33,10 @@ france <- ne_countries(scale = "medium", country = "France", returnclass = "sf")
 ```
 
 ```{r}
-# Create a data frame with the coordinates and colors
-# grid_data <- expand.grid(x = 1:30, y = 1:30)  # 10x10 grid
-# grid_data$color <- "white"  # Default color for all squares
+### Create a data frame with the coordinates and colors
 
-# (10--5)*2 = 30
-# (51.5-41)*2 = 21
+# (10--5)*2 = 30 columns
+# (51.5-41)*2 = 21 lines
 
 # Function to sample at random following the grid
 sampling_grid <- function(i){
@@ -58,9 +56,7 @@ sampling_grid <- function(i){
       a <- x_init + 10*k
       b <- l
       cells_x <- append(cells_x, a)
-      # print(a)
       cells_y <- append(cells_y, b)
-      # print(b)
       k <- k+1
     }
   }
@@ -91,11 +87,11 @@ grid_sf <- st_as_sf(grid, coords = c("x", "y"), crs = 4326)
 grid_sf <- st_make_grid(grid_sf, cellsize = c(grid_size, grid_size))
 
 # Highlight specific cells
-highlighted_cells <- grid_sf[test$x + (test$y)*30, ]  # Example: highlight specific cells
+highlighted_cells <- grid_sf[test$x + (test$y)*30, ]  # highlight specific cells
 highlighted_cells <- st_sf(geometry = highlighted_cells, color = "red")  # Assign color
 
 # Combine highlighted and non-highlighted cells
-grid_sf <- st_sf(geometry = grid_sf, color = "white")
+grid_sf <- st_sf(geometry = grid_sf, color = "white") # Default color for all squares
 grid_sf$color[which(grid_sf$geometry %in% highlighted_cells$geometry)] <- highlighted_cells$color
 ```
 
@@ -109,17 +105,14 @@ ggplot() +
   scale_fill_identity() +  # Use the colors defined in the grid_sf object
   coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
   theme_minimal() +
-  ggtitle("Firs-stage sampling: sampling of cells within a grid") 
-# +
-  # annotation_scale(location = "bl") + # location = NULL
-  # annotation_north_arrow(location = "bl")
+  ggtitle("Firs-stage sampling: sampling of cells within a grid")
 ```
 
 ```{r}
 # Intersect grid with the map of France
 intersected <- st_intersection(grid_sf, france)
 
-# Create a new column to determine land or water (or other features)
+# Create a new column to determine land or water
 # Here, we'll simply mark if a grid cell intersects with land (France)
 grid_sf$color2 <- ifelse(st_intersects(grid_sf, france, sparse = FALSE), "green", "blue")
 ```
@@ -137,9 +130,7 @@ ggplot() +
   geom_sf(data = grid_sf, aes(fill = color3), color = "black", alpha = 0.4) +
   scale_fill_identity() +  # Use the colors defined in the grid_sf object
   coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
-  theme_minimal() 
-# +
-  # ggtitle("")
+  theme_minimal()
 ```
 
 
