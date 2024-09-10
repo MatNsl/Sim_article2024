@@ -6,7 +6,7 @@ Work based on the database used by Chauvet et alii (2023).
 
 ## Goal of this repository
 
-To develop some bootstrap method for a continuous sampling frame, which could be applied to forest inventories or at least a simplified version of them.
+To develop some bootstrap method for a continuous sampling design, which could be applied to forest inventories or at least a simplified version of them.
 
 ## Data and Files
 
