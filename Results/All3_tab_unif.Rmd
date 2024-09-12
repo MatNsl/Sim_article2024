@@ -1,9 +1,9 @@
 ---
 title: "Monte Carlo and bootstrap for ALL parameters with tables"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 date: "2024-08-16"
 ---
 
@@ -54,8 +54,8 @@ real_val <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*
   )
 
 real_val_read <- c(nrow(trees), nrow(trees[(pi*trees$d130 < 70.5),]), nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), nrow(trees[(pi*trees$d130 > 117.5),]), 
-  sum(trees$v), sum(trees[(pi*trees$d130 < 70.5),]$v), sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), sum(trees[(pi*trees$d130 > 117.5),]$v), 
-  round(sum(trees$v)/nrow(trees), digits = 3), round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 3), round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 3)
+  format(round(sum(trees$v), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 < 70.5),]$v), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 > 117.5),]$v), digits = 3), nsmall = 3), 
+  format(round(sum(trees$v)/nrow(trees), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 < 70.5),]$v)/nrow(trees[(pi*trees$d130 < 70.5),]), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]$v)/nrow(trees[(pi*trees$d130 < 117.5) & (pi*trees$d130 > 70.5),]), digits = 3), nsmall = 3), format(round(sum(trees[(pi*trees$d130 > 117.5),]$v)/nrow(trees[(pi*trees$d130 > 117.5),]), digits = 3), nsmall = 3)
   )
 
 cat("True integrals are the following:\n\nNumber of trees:", real_val_read[1], "\nTotal volume:", real_val_read[5], 
@@ -105,6 +105,11 @@ raw_names <- c("x", "y", "nb", "nb_s","nb_m", "nb_b", "vol", "vol_s", "vol_m", "
 ```{r}
 # All the names of the parameters of interest, explicitly
 PARAM_names <- c("Number of trees", "Number of small trees", "Number of medium trees", "Number of big trees", "Volume of trees", "Volume of small trees", "Volume of medium trees", "Volume of big trees", "Ratio for all trees", "Ratio for small trees", "Ratio for medium trees", "Ratio for big trees")
+```
+
+```{r}
+# Names of sampling techniques
+samp_tech <- c("uniform sampling", "Algorithm \\ref{grid1}", "Algorithm \\ref{grid2}", "Algorithm \\ref{grid3}")
 ```
 
 ## Values and functions necessary to sample
@@ -205,6 +210,11 @@ sampling_grid3 <- function(i, c_dim){
   colnames(random_points) <- list("x", "y")
   return(random_points)
 }
+```
+
+```{r}
+# List of sampling functions
+fun_tech <- c(sampling_unif, sampling_grid1, sampling_grid2, sampling_grid3)
 ```
 
 # Functions
@@ -563,21 +573,24 @@ coverage_rate <- function(k, res2){
 ```{r}
 # Monte carlo alone
 # Number of MC iterations
-B0 <- 10000 # 10 # 
+B0 <- 10 # 10000 # 
 ```
 
 ```{r}
 # Monte Carlo and bootstrap
 # Number of MC iterations
-B1 <- 1000 # 5 # 
+B1 <- 5 # 1000 # 
 # Number of bootstrap replications
-B2 <- 400 # 5 # 
+B2 <- 5 # 400 # 
 ```
 
 # Example: Uniform sampling with basic bootstrap
 
 ```{r}
-fun_samp <- sampling_unif
+# The adequate function and its name
+k <- 1 # Uniform sampling
+fun_samp <- fun_tech[k][[1]]
+name_samp <- samp_tech[k]
 ```
 
 ## Monte Carlo alone
@@ -712,13 +725,13 @@ rs_df <- mapply(RS, VAR_boot, res1$Variances)
 
 ```{r}
 # Table for comparison
-DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(round(rs_df, digits = 2), "%") )
+DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` = paste0(format(round(rs_df, digits = 2), nsmall = 2), "%") )
 ```
 
 ```{r RS_unif}
 tab_rs <- DF_rs %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
-  "\\hline"), caption = paste0("Relative stability of variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
+  "\\hline"), caption = paste0("Approximation of Relative Stability of bootstrap variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
   kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", full_width = FALSE, 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
@@ -794,7 +807,7 @@ for (param in 1:8) {
   df_param <- data.frame(Parameter.of.interest = character(0), Method = character(0), TC = numeric(0), Lower = numeric(0), Upper = numeric(0), Mean_length = numeric(0))
   k <- 1
   for (TC_meth in list(TC_normal, TC_perc, TC_rev_perc, TC_bca)) {
-    df_param <- rbind(df_param, as.data.frame(t(c(`Parameter of interest` = PARAM_names[param], Method = meth_nam[k], paste0(round(TC_meth[param,1:3]*100, digits = 2), "%"), round(TC_meth[param,4], digits = 2) ))))
+    df_param <- rbind(df_param, as.data.frame(t(c(`Parameter of interest` = PARAM_names[param], Method = meth_nam[k], paste0(format(round(TC_meth[param,1:3]*100, digits = 1), nsmall = 1), "%"), format(round(TC_meth[param,4], digits = 2), nsmall = 2) ))))
     k <- k+1
   }
   df_total1 <- rbind(df_total1, df_param)
@@ -805,7 +818,7 @@ colnames(df_total1) <- c("Parameter of interest", "Method", "Coverage rate", "L"
 
 ```{r CI_tot_unif}
 tab_ci1 <- df_total1 %>%
-  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (totals)")) %>%
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications with ", name_samp, " (totals)")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>%
   row_spec(c(0, 16), hline_after = T) %>% 
@@ -834,7 +847,7 @@ for (param in 9:12) {
   df_param <- data.frame(Parameter.of.interest = character(0), Method = character(0), TC = numeric(0), Lower = numeric(0), Upper = numeric(0), Mean_length = numeric(0))
   k <- 1
   for (TC_meth in list(TC_normal, TC_perc, TC_rev_perc, TC_bca)) {
-    df_param <- rbind(df_param, as.data.frame(t(c(`Parameter of interest` = PARAM_names[param], Method = meth_nam[k], paste0(round(TC_meth[param,1:3]*100, digits = 2), "%"), round(TC_meth[param,4], digits = 5) ))))
+    df_param <- rbind(df_param, as.data.frame(t(c(`Parameter of interest` = PARAM_names[param], Method = meth_nam[k], paste0(format(round(TC_meth[param,1:3]*100, digits = 1), nsmall = 1), "%"), format(round(TC_meth[param,4], digits = 5), nsmall = 5) ))))
     k <- k+1
   }
   df_total2 <- rbind(df_total2, df_param)
@@ -878,13 +891,13 @@ cat("Relative Bias of the variance: \n - for the number of trees: ", diff_percen
 
 ```{r}
 # Table for comparison
-diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Monte Carlo Relative Bias` = paste0(round(mapply(function(x,y){unlist(100*(y-x)/x)}, res1$Variances, VAR_df), digits = 2), "%") )
+diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Monte Carlo Relative Bias` = paste0(format(round(mapply(function(x,y){unlist(100*(y-x)/x)}, res1$Variances, VAR_df), digits = 2), nsmall = 2), "%") )
 ```
 
 ```{r RB_unif}
 tab_var <- diff_var %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
-  "\\addlinespace"), caption = paste0("Approximation of Relative Bias when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
+  "\\addlinespace"), caption = paste0("Approximation of Relative Bias of bootstrap variance when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
   kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
