@@ -1,9 +1,9 @@
 ---
 title: "Monte Carlo and bootstrap for ALL parameters with tables"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 date: "2024-08-16"
 ---
 
@@ -74,7 +74,7 @@ real_df <- data.frame(c("All trees", "Small trees", "Medium trees", "Big trees")
 colnames(real_df) <- c("", "Number", "Volume", "Ratio Volume/Number")
 ```
 
-```{r}
+```{r Real_val}
 tab_real <- real_df %>%
   kable("latex", booktabs = FALSE, align = "lccc", linesep = c("", "\\addlinespace", "", "", "", ""), 
         caption = paste("True values proper to the database"), col.names = gsub("[.]", " ", names(real_df))) %>% # \\hline
@@ -573,15 +573,15 @@ coverage_rate <- function(k, res2){
 ```{r}
 # Monte carlo alone
 # Number of MC iterations
-B0 <- 10 # 10000 # 
+B0 <- 10000 # 10 # 
 ```
 
 ```{r}
 # Monte Carlo and bootstrap
 # Number of MC iterations
-B1 <- 5 # 1000 # 
+B1 <- 1000 # 5 # 
 # Number of bootstrap replications
-B2 <- 5 # 400 # 
+B2 <- 400 # 5 # 
 ```
 
 # Example: Uniform sampling with basic bootstrap
@@ -731,7 +731,7 @@ DF_rs <- data.frame(`Parameter of interest` = PARAM_names, `Relative stability` 
 ```{r RS_unif}
 tab_rs <- DF_rs %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
-  "\\hline"), caption = paste0("Approximation of Relative Stability of bootstrap variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications"), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
+  "\\hline"), caption = paste0("Approximation of Relative Stability of bootstrap variance by using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications with ", name_samp), col.names = gsub("[.]", " ", names(DF_rs))) %>% # \\hline \\addlinespace
   kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", full_width = FALSE, 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
@@ -858,7 +858,7 @@ colnames(df_total2) <- c("Parameter of interest", "Method", "Coverage rate", "L"
 
 ```{r CI_ratio_unif}
 tab_ci2 <- df_total2 %>%
-  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications (ratios)")) %>%
+  kable("latex", booktabs = FALSE, align = "llcccc", caption = paste0("Characteristics of confidence intervals when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications with ", name_samp, " (ratios)")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(0, bold = TRUE) %>%
   row_spec(c(0), hline_after = T) %>% 
@@ -897,7 +897,7 @@ diff_var <- data.frame(`Parameter of interest` = PARAM_names, `Monte Carlo Relat
 ```{r RB_unif}
 tab_var <- diff_var %>%
   kable("latex", booktabs = FALSE, align = "lc", linesep = c("", "", "",
-  "\\addlinespace"), caption = paste0("Approximation of Relative Bias of bootstrap variance when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case"), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
+  "\\addlinespace"), caption = paste0("Approximation of Relative Bias of bootstrap variance when using ", B1, " Monte Carlo iterations and ", B2, " bootstrap replications in one case and ", B0, " Monte Carlo iterations in the other case with ", name_samp), col.names = gsub("[.]", " ", names(diff_var))) %>% # \\hline
   kable_styling(latex_options = c("striped", "hold_position")) %>% # bootstrap_options = "striped", 
   row_spec(0, bold = TRUE) %>% # , hline_after = TRUE
   row_spec(c(0, 4, 8), hline_after = T) %>% 
